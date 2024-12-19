@@ -46,6 +46,7 @@ add_project_arguments(
     #'-Wsuggest-attribute=noreturn',
     #'-Wsuggest-attribute=malloc',
     #'-Wsuggest-attribute=returns_nonnull',
+    #'-Wno-unused-function',
     '-Wstrict-prototypes',
     '-Wswitch',
     '-Wtype-limits',
@@ -58,7 +59,6 @@ add_project_arguments(
     '-fdiagnostics-color=auto',
     # warnings disabled on purpose
     '-Wno-unused-parameter',
-    '-Wno-unused-function',
     '-Wno-deprecated-declarations',
   ]),
   language: 'c',
