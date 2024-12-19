@@ -14,6 +14,7 @@
 // "just" add the new records when they are found, but that's for another day...
 //
 
+#include "config.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
@@ -34,17 +35,13 @@ static const char *db_create_sql =	"CREATE TABLE IF NOT EXISTS commits "	\
 					"(id TEXT PRIMARY KEY NOT NULL, "	\
 					" release TEXT NOT NULL, "		\
 					" mainline_id TEXT,"			\
+					" reverts TEXT,"			\
 					" fixes TEXT);";
 
 // TODO : add logic to parse Fixes tags as well and put them in the "fixes" field  Will make some
 // other searches that dyad runs MUCH faster
 
 static struct sqlite3 *database;
-
-static int db_create(void)
-{
-	return 0;
-}
 
 static int db_init(void)
 {
@@ -97,6 +94,8 @@ static int db_write_to_disk(void)
 	int ret;
 	sqlite3 *file;
 	sqlite3_backup *backup;
+
+	fprintf(stdout, "Writing database to %s\n", database_name);
 
 	ret = sqlite3_open(database_name, &file);
 	if (ret != SQLITE_OK) {
@@ -220,12 +219,80 @@ exit:
 	return upstream;
 }
 
-static const char *db_insert_sql = "INSERT INTO commits (id, release) VALUES (?, ?);";
-static const char *db_insert_mainline_sql = "INSERT INTO commits (id, release, mainline_id) VALUES (?, ?, ?);";
+// Copy of find_mainline up above, make this better someday...
+static char *find_reverts(const char *message)
+{
+	int ret;
+	char *upstream = NULL;
+	pcre2_code *re_upstream;
+	pcre2_code *re_commit_id;
+	int errornumber;
+	pcre2_match_data *match_upstream;
+	pcre2_match_data *match_commit;
+	PCRE2_SIZE erroroffset;
+	PCRE2_SPTR upstream_pattern = (PCRE2_SPTR8)".*reverts.*\n?";
+	PCRE2_SPTR sha_pattern = (PCRE2_SPTR8)"[a-f0-9]{40,}";
+
+	// initialize our regular expression to find the upstream commit id
+	re_upstream = pcre2_compile(upstream_pattern, PCRE2_ZERO_TERMINATED,
+				    PCRE2_CASELESS, &errornumber, &erroroffset, NULL);
+	if (!re_upstream) {
+		fprintf(stderr, "pcre regex for upstream is not created.\n");
+		goto exit;
+	}
+	match_upstream = pcre2_match_data_create_from_pattern(re_upstream, NULL);
+
+	re_commit_id = pcre2_compile(sha_pattern, PCRE2_ZERO_TERMINATED,
+				     PCRE2_CASELESS, &errornumber, &erroroffset, NULL);
+	if (!re_commit_id) {
+		fprintf(stderr, "pcre regex for sha pattern is not created.\n");
+		goto exit;
+	}
+	match_commit = pcre2_match_data_create_from_pattern(re_commit_id, NULL);
+
+	ret = pcre2_match(re_upstream, (PCRE2_SPTR8)message, strlen(message), 0, 0, match_upstream, NULL);
+	if (ret > 0) {
+		// match worked!
+		PCRE2_SIZE *ovector;
+
+		ovector = pcre2_get_ovector_pointer(match_upstream);
+		for (int i = 0; i < ret; ++i) {
+			PCRE2_SPTR substring_start = (PCRE2_SPTR8)message + ovector[2*i];
+			size_t substring_length = ovector[2*i+1] - ovector[2*i];
+			//printf("	%2d: %.*s\n", i, (int)substring_length, (char *)substring_start);
+
+			// FIXME: Now do the second search of the line for the sha
+			int ret2 = pcre2_match(re_commit_id, substring_start, substring_length, 0, 0, match_commit, NULL);
+			if (ret2 > 0) {
+				// match found something!
+				PCRE2_SIZE *ovector2;
+
+				ovector2 = pcre2_get_ovector_pointer(match_commit);
+				for (int j = 0; j < ret2; ++j) {
+					PCRE2_SPTR substring_start2 = (PCRE2_SPTR8)substring_start + ovector2[2*i];
+					size_t substring_length2 = ovector2[2*i+1] - ovector2[2*i];
+					//printf("	%2d: %.*s\n", i, (int)substring_length2, (char *)substring_start2);
+					upstream = malloc(substring_length2 + 1);
+					memcpy(upstream, substring_start2, substring_length2);
+					upstream[substring_length2] = 0x00;
+				}
+			}
+		}
+	}
+
+	pcre2_match_data_free(match_upstream);
+	pcre2_code_free(re_commit_id);
+	pcre2_code_free(re_upstream);
+exit:
+	return upstream;
+}
+
+static const char *db_insert_sql = "INSERT INTO commits (id, release, mainline_id, reverts) VALUES (?, ?, ?, ?);";
 
 static int create_kernel_range(const char *start, const char *end, bool minor)
 {
 	char *upstream = NULL;
+	char *reverts = NULL;
 	char range[256];
 	git_oid oid;
 	git_revwalk *walker;
@@ -255,61 +322,65 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 	while (!git_revwalk_next(&oid, walker)) {
 		char sha[256];
 		sqlite3_stmt *sql_stmt = NULL;
+		const char *message;
+		git_commit *commit;
 
+		// Turn the git oid into a full sha1
 		git_oid_tostr(sha, sizeof(sha), &oid);
+
+		// Get the git commit message so we can search it for stuff
+		ret = git_commit_lookup(&commit, git_repo, &oid);
+		if (ret) {
+			fprintf(stderr, "git message lookup for %s failed\n", sha);
+			continue;
+		}
+
+		message = git_commit_message(commit);
 
 		// If this is a minor range, search the changelog message to figure out if this is
 		// an upstream id, and if so, what it is and then save it off.
-		// FIXME also save the Fixes: tag
 		if (minor) {
-			const char *message;
-			git_commit *commit;
-
-			ret = git_commit_lookup(&commit, git_repo, &oid);
-			if (ret) {
-				fprintf(stderr, "git message lookup for %s failed\n", sha);
-				continue;
-			}
-
-			message = git_commit_message(commit);
 			upstream = find_upstream(message);
-			git_commit_free(commit);
+			//if (upstream)
+			//	printf("	upstream=%s\n", upstream);
 		}
 
-		if (upstream) {
-			//printf("	upstream=%s\n", upstream);
-			ret = sqlite3_prepare(database, db_insert_mainline_sql, -1, &sql_stmt, NULL);
-			if (ret) {
-				fprintf(stderr, "Error preparing sql statement %s\n",
-					sqlite3_errmsg(database));
-				goto exit;
-			}
-			sqlite3_bind_text(sql_stmt, 1, sha, strlen(sha), NULL);
-			sqlite3_bind_text(sql_stmt, 2, end, strlen(end), NULL);
-			sqlite3_bind_text(sql_stmt, 3, upstream, strlen(upstream), NULL);
-			ret = sqlite3_step(sql_stmt);
-			if (ret != SQLITE_DONE) {
-				fprintf(stderr, "Error inserting row %s\n", sqlite3_errmsg(database));
-			}
-			free(upstream);
-		} else {
-			// Just commit the sha and version as that's all we know here
-			ret = sqlite3_prepare(database, db_insert_sql, -1, &sql_stmt, NULL);
-			if (ret) {
-				fprintf(stderr, "Error preparing sql statement %s\n",
-					sqlite3_errmsg(database));
-				goto exit;
-			}
-			sqlite3_bind_text(sql_stmt, 1, sha, strlen(sha), NULL);
-			sqlite3_bind_text(sql_stmt, 2, end, strlen(end), NULL);
-			ret = sqlite3_step(sql_stmt);
-			if (ret != SQLITE_DONE) {
-				fprintf(stderr, "Error inserting row %s\n", sqlite3_errmsg(database));
-			}
+		// Find if this is a revert
+		reverts = find_reverts(message);
+		//if (reverts)
+		//	printf("	reverts=%s\n", reverts);
+
+		// FIXME also save the Fixes: tag
+
+
+		git_commit_free(commit);
+
+		// Save it in the databse
+		ret = sqlite3_prepare(database, db_insert_sql, -1, &sql_stmt, NULL);
+		if (ret) {
+			fprintf(stderr, "Error preparing sql statement %s\n",
+				sqlite3_errmsg(database));
+			goto exit;
 		}
+		sqlite3_bind_text(sql_stmt, 1, sha, strlen(sha), NULL);
+		sqlite3_bind_text(sql_stmt, 2, end, strlen(end), NULL);
+		if (upstream)
+			sqlite3_bind_text(sql_stmt, 3, upstream, strlen(upstream), NULL);
+
+		if (reverts)
+			sqlite3_bind_text(sql_stmt, 4, reverts, strlen(reverts), NULL);
+
+		ret = sqlite3_step(sql_stmt);
+		if (ret != SQLITE_DONE) {
+			fprintf(stderr, "Error inserting row %s\n", sqlite3_errmsg(database));
+		}
+
+		if (upstream)
+			free(upstream);
+		if (reverts)
+			free(reverts);
 	}
 	ret = 0;
-
 exit:
 	git_revwalk_free(walker);
 	return ret;
@@ -418,6 +489,8 @@ static void loop_through_2(void)
 int main(void)
 {
 	int ret;
+
+	fprintf(stdout, "%s version %s\n", PACKAGE_NAME, VERSION);
 
 	ret = db_init();
 	if (ret)
