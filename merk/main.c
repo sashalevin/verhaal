@@ -193,7 +193,7 @@ static char *find_upstream(const char *message)
 			size_t substring_length = ovector[2*i+1] - ovector[2*i];
 			//printf("	%2d: %.*s\n", i, (int)substring_length, (char *)substring_start);
 
-			// FIXME: Now do the second search of the line for the sha
+			// Now do the second search of the line for the sha
 			int ret2 = pcre2_match(re_commit_id, substring_start, substring_length, 0, 0, match_commit, NULL);
 			if (ret2 > 0) {
 				// match found something!
@@ -261,7 +261,7 @@ static char *find_reverts(const char *message)
 			size_t substring_length = ovector[2*i+1] - ovector[2*i];
 			//printf("	%2d: %.*s\n", i, (int)substring_length, (char *)substring_start);
 
-			// FIXME: Now do the second search of the line for the sha
+			// Now do the second search of the line for the sha
 			int ret2 = pcre2_match(re_commit_id, substring_start, substring_length, 0, 0, match_commit, NULL);
 			if (ret2 > 0) {
 				// match found something!
@@ -281,18 +281,146 @@ static char *find_reverts(const char *message)
 	}
 
 	pcre2_match_data_free(match_upstream);
+	pcre2_match_data_free(match_commit);
 	pcre2_code_free(re_commit_id);
 	pcre2_code_free(re_upstream);
 exit:
 	return upstream;
 }
 
-static const char *db_insert_sql = "INSERT INTO commits (id, release, mainline_id, reverts) VALUES (?, ?, ?, ?);";
+#if 0
+// Test message to check for multiple Fixes: lines
+static const char *test_message =
+"    Reported-by: Juri Lelli <juri.lelli@redhat.com> # original bug\n"
+"    Reported-by: Manu Bretelle <chantra@meta.com> # bugs in masking fix\n"
+"    Fixes: 3f00c5239344 (\"bpf: Allow trusted pointers to be passed to KF_TRUSTED_ARGS kfuncs\")\n"
+"    Fixes: cb4158ce8ec8 (\"bpf: Mark raw_tp arguments with PTR_MAYBE_NULL\")\n"
+"    Reviewed-by: Eduard Zingerman <eddyz87@gmail.com>\n"
+"    Co-developed-by: Jiri Olsa <jolsa@kernel.org>";
+#endif
+
+// Handle a single "Fixes:" line
+static char *find_fix(const char *line)
+{
+	int ret;
+	char *upstream = NULL;
+	pcre2_code *re_fixes;
+	pcre2_code *re_commit_id;
+	int errornumber;
+	pcre2_match_data *match_fixes;
+	pcre2_match_data *match_commit;
+	PCRE2_SIZE erroroffset;
+	PCRE2_SPTR fixes_pattern = (PCRE2_SPTR8)".*fixes:.*\n?";
+	//PCRE2_SPTR sha_pattern = (PCRE2_SPTR8)"[a-f0-9]{40,}";
+	PCRE2_SPTR sha_pattern = (PCRE2_SPTR8)"[a-f0-9]{10,}";	// At least 10 characters long, we
+								// might miss some odd ones, but
+								// it's a good start as they
+								// _should_ all be at least 12 long
+
+	// initialize our regular expression to find the "Fixes:" line
+	re_fixes = pcre2_compile(fixes_pattern, PCRE2_ZERO_TERMINATED,
+				    PCRE2_CASELESS, &errornumber, &erroroffset, NULL);
+	if (!re_fixes) {
+		fprintf(stderr, "pcre regex for upstream is not created.\n");
+		goto exit;
+	}
+	match_fixes = pcre2_match_data_create_from_pattern(re_fixes, NULL);
+
+	// initialize our regular expression for the SHA1 line
+	re_commit_id = pcre2_compile(sha_pattern, PCRE2_ZERO_TERMINATED,
+				     PCRE2_CASELESS, &errornumber, &erroroffset, NULL);
+	if (!re_commit_id) {
+		fprintf(stderr, "pcre regex for sha pattern is not created.\n");
+		goto exit;
+	}
+	match_commit = pcre2_match_data_create_from_pattern(re_commit_id, NULL);
+
+	ret = pcre2_match(re_fixes, (PCRE2_SPTR8)line, strlen(line), 0, 0, match_fixes, NULL);
+	if (ret > 0) {
+		// match worked!
+		PCRE2_SIZE *ovector;
+
+		ovector = pcre2_get_ovector_pointer(match_fixes);
+		for (int i = 0; i < ret; ++i) {
+			PCRE2_SPTR substring_start = (PCRE2_SPTR8)line + ovector[2*i];
+			size_t substring_length = ovector[2*i+1] - ovector[2*i];
+			//printf("	%2d: %.*s\n", i, (int)substring_length, (char *)substring_start);
+
+			// Now do the second search of the line for the sha
+			int ret2 = pcre2_match(re_commit_id, substring_start, substring_length, 0, 0, match_commit, NULL);
+			if (ret2 > 0) {
+				// match found something!
+				PCRE2_SIZE *ovector2;
+
+				ovector2 = pcre2_get_ovector_pointer(match_commit);
+				for (int j = 0; j < ret2; ++j) {
+					PCRE2_SPTR substring_start2 = (PCRE2_SPTR8)substring_start + ovector2[2*i];
+					size_t substring_length2 = ovector2[2*i+1] - ovector2[2*i];
+					//printf("	%2d: %.*s\n", i, (int)substring_length2, (char *)substring_start2);
+					upstream = malloc(substring_length2 + 1);
+					memcpy(upstream, substring_start2, substring_length2);
+					upstream[substring_length2] = 0x00;
+				}
+			}
+		}
+	}
+
+	pcre2_match_data_free(match_fixes);
+	pcre2_match_data_free(match_commit);
+	pcre2_code_free(re_commit_id);
+	pcre2_code_free(re_fixes);
+exit:
+	return upstream;
+}
+
+// Handle the message one line at a time, as that's simpler than attempting a recursive search of a
+// large buffer
+static char *find_fixes(const char *message)
+{
+	char *final, *temp;
+	final = malloc(1024);
+	memset(final, 0x00, 1024);
+	temp = malloc(1024);
+
+	// Split the message up into one-per-line in a destructive way
+	// and then feed that to find_fix and build up a string of sha1
+	// values as a "fixes" line
+	char *local_message = strdup(message);
+	char *line = strtok(local_message, "\n");
+	while (line) {
+		//fprintf(stdout, "line: '%s'\n", line);
+		char *f = find_fix(line);
+		if (f) {
+			// FIXME: turn this into a fully-formed SHA1, not just an abbreviated one
+			if (strlen(final) == 0)
+				snprintf(temp, 1024, "%s", f);
+			else
+				snprintf(temp, 1024, "%s %s", final, f);
+
+			strcpy(final, temp);
+			free(f);
+		}
+		line = strtok(NULL, "\n");
+	}
+	free(local_message);
+	//fprintf(stdout, "final='%s'\n", final);
+	free(temp);
+
+	// If we didn't find anything, just return NULL to keep things sane
+	if (strlen(final) == 0) {
+		free(final);
+		return NULL;
+	}
+	return final;
+}
+
+static const char *db_insert_sql = "INSERT INTO commits (id, release, mainline_id, reverts, fixes) VALUES (?, ?, ?, ?, ?);";
 
 static int create_kernel_range(const char *start, const char *end, bool minor)
 {
 	char *upstream = NULL;
 	char *reverts = NULL;
+	char *fixes = NULL;
 	char range[256];
 	git_oid oid;
 	git_revwalk *walker;
@@ -350,8 +478,10 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 		//if (reverts)
 		//	printf("	reverts=%s\n", reverts);
 
-		// FIXME also save the Fixes: tag
-
+		// Find if this commit fixes anything
+		fixes = find_fixes(message);
+		//if (fixes)
+		//	printf("	fixes=%s\n", fixes);
 
 		git_commit_free(commit);
 
@@ -370,6 +500,9 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 		if (reverts)
 			sqlite3_bind_text(sql_stmt, 4, reverts, strlen(reverts), NULL);
 
+		if (fixes)
+			sqlite3_bind_text(sql_stmt, 5, fixes, strlen(fixes), NULL);
+
 		ret = sqlite3_step(sql_stmt);
 		if (ret != SQLITE_DONE) {
 			fprintf(stderr, "Error inserting row %s\n", sqlite3_errmsg(database));
@@ -379,6 +512,8 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 			free(upstream);
 		if (reverts)
 			free(reverts);
+		if (fixes)
+			free(fixes);
 	}
 	ret = 0;
 exit:
