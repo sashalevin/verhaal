@@ -20,9 +20,10 @@ if [ "${id}" == "" ] ; then
         exit 1
 fi
 
-revert=$(sqlite3 commits.db "SELECT id FROM commits WHERE reverts='${id}';")
-if [[ "${revert}" != "" ]] ; then
-	echo "commit ${id} is reverted by commit ${revert}"
-fi
+reverts=$(sqlite3 ${DB} "SELECT id FROM commits WHERE reverts='${id}';")
+for revert in ${reverts}; do
+	release=$(sqlite3 ${DB} "SELECT release FROM commits WHERE id='${revert}';")
+	echo "commit ${id} was reverted by commit ${revert} in release ${release}"
+done
 
 exit 0
