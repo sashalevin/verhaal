@@ -531,6 +531,109 @@ static int create_kernel_range_minor(const char *major, const char *minor)
 	return create_kernel_range(major, minor, true);
 }
 
+static int create_kernel_range_rc(void)
+{
+	git_describe_result *res;
+	git_object *object;
+	git_reference *ref;
+	git_describe_format_options options;
+	git_describe_options desc_options;
+	const git_oid *oid;
+	git_buf buf = { 0 };
+	char *head_tag;
+	int ret;
+	char range1[256];
+	char range2[256];
+
+	// First, find the current release, which is the "newest" tag (i.e. description) of the head
+	// that is in the master branch. "git describe --abbrev=0 master" does what we need.
+
+#if 0
+	// Cheat way, just call popen()!
+	FILE *fp;
+	char output[1024];
+	fp = popen("cd /home/gregkh/linux/stable/linux-stable/ && git describe --abbrev=0", "r");
+	fgets(output, 1024, fp);
+	pclose(fp);
+	fprintf(stdout, "result = %s", output);
+#endif	// ok, let do it right...
+
+	// Get the branch description of 'master'
+	ret = git_branch_lookup(&ref, git_repo, "master", GIT_BRANCH_LOCAL);
+	if (ret)
+		fprintf(stderr, "git_branch_lookup() failed: %d\n", ret);
+
+	oid = git_reference_target(ref);
+	if (!oid)
+		fprintf(stderr, "git_reference_target() failed\n");
+
+	ret = git_object_lookup(&object, git_repo, oid, GIT_OBJECT_COMMIT);
+	if (ret)
+		fprintf(stderr, "git_object_lookup() failed: %d\n", ret);
+
+
+	git_describe_options_init(&desc_options, GIT_DESCRIBE_OPTIONS_VERSION);
+	desc_options.only_follow_first_parent = 1;
+
+	ret = git_describe_commit(&res, object, &desc_options);
+	if (ret)
+		fprintf(stderr, "git_describe_commit() failed: %d\n", ret);
+
+	git_describe_format_options_init(&options, GIT_DESCRIBE_FORMAT_OPTIONS_VERSION);
+	options.abbreviated_size = 0;
+
+	ret = git_describe_format(&buf, res, &options);
+	if (ret)
+		fprintf(stderr, "git_describe_format() failed: %d\n", ret);
+
+	fprintf(stdout, "git head tag = %s\n", buf.ptr);
+
+	head_tag = strdup(buf.ptr);
+
+	git_describe_result_free(res);
+	git_object_free(object);
+	git_reference_free(ref);
+	git_buf_dispose(&buf);
+
+	// If there is no "-rc" in the head, then nothing to do!
+	char *rc = strstr(head_tag, "-rc");
+	if (rc == NULL) {
+		fprintf(stdout, "At a main release, no -rc release to generate.\n");
+		goto exit;
+	}
+
+	// Let's start with the previous release and go to the current -rc1
+	// Carve off the -rc from the string
+	rc[0] = 0x00;
+
+	// Find the first '.'
+	char *dot = strstr(head_tag, ".");
+	if (dot == NULL) {
+		fprintf(stderr, "Error: can not parse version string '%s', exiting -rc attempt\n",
+			head_tag);
+		goto exit;
+	}
+
+	// Find the major and minor number of the release
+	int major = atoi(&head_tag[1]);
+	int minor = atoi(&dot[1]);
+
+	snprintf(range1, sizeof(range1), "%d.%d", major, minor - 1);
+	snprintf(range2, sizeof(range2), "%d.%d-rc1", major, minor);
+	create_kernel_range_major(range1, range2);
+
+	// Let's walk through as many -rc releases as we can think of
+	for (int i = 1; i < 12; ++i) {
+		snprintf(range1, sizeof(range1), "%s-rc%d", &head_tag[1], i);
+		snprintf(range2, sizeof(range2), "%s-rc%d", &head_tag[1], i + 1);
+		create_kernel_range_major(range1, range2);
+	}
+
+exit:
+	free(head_tag);
+	return 0;
+}
+
 static void loop_through_y(int major, int minor)
 {
 	char str[256];
@@ -648,8 +751,8 @@ int main(void)
 	create_kernel_range_major("4.20", "5.0");
 	create_kernel_range_major("5.19", "6.0");
 
-	// Now take the "last" release, and do all of the -rc releases to catch them.
-	// FIXME
+	// Fill in the last little bit of -rc release information if we have it in the tree
+	create_kernel_range_rc();
 
 	git_shutdown();
 
