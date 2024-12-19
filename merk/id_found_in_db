@@ -1,0 +1,60 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Copyright 2018-2020,2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+#
+# Given a git commit id, find the release(s) it was found in
+
+# This is the version that requires a sql database to be present, we don't rely
+# on the filesystem to be set up like the "other" version of this script does.
+#
+# NOTE: does NOT search the queues, so watch out for that.  If you want that,
+# it should be added as either an option, or use the "other" script.
+
+REAL_SCRIPT=$(realpath -e "${BASH_SOURCE[0]}")
+SCRIPT_TOP="${SCRIPT_TOP:-$(dirname "${REAL_SCRIPT}")}"
+
+#source "${SCRIPT_TOP}"/lib/common
+
+# Location of our database.  Should be initialized already.
+DB="${SCRIPT_TOP}"/commits.db
+
+# Location of the "latest" git tree for when patches are not found in the
+# stable tree at the moment.  This is the "fall-back" that we can use the
+# slower 'git decribe --contains' on.
+LATEST_TREE="${LATEST_TREE:-/home/gregkh/linux/work/torvalds}"
+
+GREP="git grep"
+#GREP="rg"
+
+id=$1
+
+if [ "${id}" == "" ] ; then
+        echo "$0 ID_TO_FIND"
+        exit 1
+fi
+
+# Array of places we find
+output=()
+
+# Do both selects as two different ones, as it is MUCH faster than trying to do
+# it as an OR statement or two separate calls to sqlite3
+releases=$(sqlite3 ${DB} "SELECT release FROM commits WHERE mainline_id='${id}'; SELECT release from commits WHERE id='${id}';")
+for release in ${releases}; do
+	output+=("${release}")
+	#echo -n "${release} "
+done
+
+# if we have found nothing, let's try the fallback and do the old and
+# slow 'git describe --contains' to try to find at least some hint of
+# where this commit might be at.
+if [ "${output[0]}" == "" ] ; then
+	cd "${LATEST_TREE}" || exit
+	output+=("$(git describe --contains "${id}")")
+fi
+
+# sort the list of releases and put them in a new array called "sorted"
+readarray -t sorted < <(for release in "${output[@]}"; do echo "${release}"; done | sort -V | uniq)
+
+# print them out all on one line, with ' ' inbetween them
+(IFS=' ' ; printf '%s\n' "${sorted[*]}")
