@@ -24,17 +24,13 @@ DB="${SCRIPT_TOP}"/commits.db
 # slower 'git decribe --contains' on.
 LATEST_TREE="${LATEST_TREE:-/home/gregkh/linux/work/torvalds}"
 
-GREP="git grep"
-#GREP="rg"
-
 id=$1
-
 if [ "${id}" == "" ] ; then
         echo "$0 ID_TO_FIND"
         exit 1
 fi
 
-# Array of places we find
+# Array of releases we find
 output=()
 
 # Do both selects as two different ones, as it is MUCH faster than trying to do
