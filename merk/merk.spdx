@@ -1,0 +1,66 @@
+SPDXVersion: SPDX-2.1
+DataLicense: CC0-1.0
+SPDXID: SPDXRef-DOCUMENT
+DocumentName: merk
+DocumentNamespace: http://spdx.org/spdxdocs/spdx-v2.1-91afc4a0-306f-4d09-9af0-d07e108c9b81
+Creator: Person: Greg Kroah-Hartman <gregkh@linuxfoundation.org> ()
+Creator: Organization: The Linux Foundation ()
+Creator: Tool: reuse-4.0.3
+Created: 2024-12-20T11:41:19Z
+CreatorComment: <text>This document was created automatically using available reuse information consistent with REUSE.</text>
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-8bafa3ce6cb83572d8854cdd9671d08c
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-af4936c2bbcad33128413a97e2cb8289
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-3ca130e13493add245d6e396d0630270
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-c8308e3318583e087769426a32d4ce5b
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-396746e7dc050747e82d1764eaa683f3
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-e0bc863ad5bf2eb4afc70a2855ddc4fa
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-2a91289440c1687f30a102ad2c6a0c1d
+
+FileName: ./.gitignore
+SPDXID: SPDXRef-8bafa3ce6cb83572d8854cdd9671d08c
+FileChecksum: SHA1: 4f718cf137ed89569e6e81ae1a738d0c4007fcfb
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
+
+FileName: ./autogen.sh
+SPDXID: SPDXRef-af4936c2bbcad33128413a97e2cb8289
+FileChecksum: SHA1: 81956f75f705080facbd294eea3549b2eff2c686
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
+
+FileName: ./id_found_in_merk
+SPDXID: SPDXRef-3ca130e13493add245d6e396d0630270
+FileChecksum: SHA1: 2c2a32f5827a3afeaeb4c1278e7a2e62ceeb0cdf
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright 2018-2020,2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
+
+FileName: ./id_is_reverted
+SPDXID: SPDXRef-c8308e3318583e087769426a32d4ce5b
+FileChecksum: SHA1: fb5305f258ec3d13fbed302ee04cf620c23a34e2
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
+
+FileName: ./justfile
+SPDXID: SPDXRef-396746e7dc050747e82d1764eaa683f3
+FileChecksum: SHA1: b64fa2fc8cc07b3c19e6c7e707ee9b0fa1f15a94
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
+
+FileName: ./main.c
+SPDXID: SPDXRef-e0bc863ad5bf2eb4afc70a2855ddc4fa
+FileChecksum: SHA1: 7a0362553f982f32f615a5be8dcec348a31d3d23
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
+
+FileName: ./meson.build
+SPDXID: SPDXRef-2a91289440c1687f30a102ad2c6a0c1d
+FileChecksum: SHA1: 909b1a365893c49353586499c0bcb9573bc06f70
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
