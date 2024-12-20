@@ -445,7 +445,8 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 		return ret;
 	}
 
-	fprintf(stdout, "saving v%s..v%s\n", start, end);
+	fprintf(stdout, "Parsing kernel commits from v%s to v%s\n", start, end);
+	fflush(stdout);
 
 	while (!git_revwalk_next(&oid, walker)) {
 		char sha[256];
@@ -516,6 +517,7 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 			free(fixes);
 	}
 	ret = 0;
+
 exit:
 	git_revwalk_free(walker);
 	return ret;
