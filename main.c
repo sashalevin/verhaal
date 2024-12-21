@@ -626,6 +626,11 @@ static int create_kernel_range_rc(void)
 
 	// Let's walk through as many -rc releases as we can think of
 	for (int i = 1; i < 12; ++i) {
+		snprintf(range1, sizeof(range1), "v%s-rc%d", &head_tag[1], i);
+		snprintf(range2, sizeof(range2), "v%s-rc%d", &head_tag[1], i + 1);
+		if (!is_valid_release(range1) || !is_valid_release(range2))
+			continue;
+
 		snprintf(range1, sizeof(range1), "%s-rc%d", &head_tag[1], i);
 		snprintf(range2, sizeof(range2), "%s-rc%d", &head_tag[1], i + 1);
 		create_kernel_range_major(range1, range2);
