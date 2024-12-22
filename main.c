@@ -2,8 +2,11 @@
 //
 // Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 //
-// "replacement" for the old-school "abuse the filesystem as a database" tool that we use to store
-// all Linux kernel mainline and stable kernel commits in so that we can "quickly" search them.
+// 'verhaal' - builds a database of kernel commits so that we can search them later on
+//
+// This is a "replacement" for the old-school "abuse the filesystem as a database" tool that we use
+// to store all Linux kernel mainline and stable kernel commits in so that we can "quickly" search
+// them.
 //
 // Instead of using the database and grep we do it all in a sql database and then we can search it
 // with some simple sql statements.  Cuts time to search from about .6 seconds to .01 seconds on my
@@ -37,9 +40,6 @@ static const char *db_create_sql =	"CREATE TABLE IF NOT EXISTS commits "	\
 					" mainline_id TEXT,"			\
 					" reverts TEXT,"			\
 					" fixes TEXT);";
-
-// TODO : add logic to parse Fixes tags as well and put them in the "fixes" field  Will make some
-// other searches that dyad runs MUCH faster
 
 static struct sqlite3 *database;
 
@@ -361,6 +361,11 @@ static const char *test_message =
 "    Reviewed-by: Eduard Zingerman <eddyz87@gmail.com>\n"
 "    Co-developed-by: Jiri Olsa <jolsa@kernel.org>";
 #endif
+
+// TODO : disambiguate the fixes sha1 values so that they are the "full" commit id to make searching
+// "more correct" later on.  https://lore.kernel.org/r/20241218233613.219345-1-sashal@kernel.org has
+// a bash script for this type of thing as an example
+
 
 // Handle a single "Fixes:" line
 static char *find_fix(const char *line)
