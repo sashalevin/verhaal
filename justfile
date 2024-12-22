@@ -11,9 +11,9 @@ _help:
 	@just --list
 
 
-# Update the merk.spdx file
+# Update the verhaal.spdx file
 @spdx:
-	reuse --root . spdx --creator-organization="The Linux Foundation" --creator-person="Greg Kroah-Hartman <gregkh@linuxfoundation.org>" > merk.spdx
+	reuse --root . spdx --creator-organization="The Linux Foundation" --creator-person="Greg Kroah-Hartman <gregkh@linuxfoundation.org>" > verhaal.spdx
 
 
 # Run the "reuse lint" tool

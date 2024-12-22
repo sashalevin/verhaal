@@ -2,7 +2,7 @@
 # Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 
 project(
-  'merk',
+  'verhaal',
   'c',
   version: '001',
   license: ['GPL-2.0-only', 'GPL-2.0-or-later','GPL-2.0-or-later'],
@@ -75,7 +75,7 @@ add_project_arguments('-include', 'config.h', language : 'c')
 ##########################
 # lsusb build instructions
 ##########################
-merk_sources = [
+verhaal_sources = [
   'main.c',
 ]
 
@@ -83,4 +83,4 @@ libsqlite3  = dependency('sqlite3', version: '>= 3.47')
 libgit2     = dependency('libgit2', version: '>= 1.8')
 libpcre2    = dependency('libpcre2-8', version: '>= 10.44')
 
-executable('merk', merk_sources, dependencies: [libsqlite3, libgit2, libpcre2], install: true)
+executable('verhaal', verhaal_sources, dependencies: [libsqlite3, libgit2, libpcre2], install: true)
