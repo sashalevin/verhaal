@@ -43,6 +43,23 @@ static const char *db_create_sql =	"CREATE TABLE IF NOT EXISTS commits "	\
 
 static struct sqlite3 *database;
 
+// Dumb "only print stuff when greg is debugging the code" function
+static bool debug = false;
+__attribute__((__format__(printf, 1, 2))) static int dbg(const char *fmt, ...)
+{
+	va_list args;
+	int ret;
+
+	if (!debug)
+		return 0;
+
+	va_start(args, fmt);
+	ret = vprintf(fmt, args);
+	va_end(args);
+
+	return ret;
+}
+
 static int db_init(void)
 {
 	char *error;
@@ -426,7 +443,7 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 	git_revwalk *walker;
 	int ret;
 
-	//fprintf(stdout, "%s: start=%s, end=%s, minor=%d\n", __func__, start, end, minor);
+	dbg("%s: start=%s, end=%s, minor=%d\n", __func__, start, end, minor);
 
 	// Loop through all git ids in this range, take the id and version and store it in the
 	// database
@@ -470,19 +487,19 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 		// an upstream id, and if so, what it is and then save it off.
 		if (minor) {
 			upstream = find_upstream(message);
-			//if (upstream)
-			//	printf("	upstream=%s\n", upstream);
+			if (upstream)
+				dbg("	upstream=%s\n", upstream);
 		}
 
 		// Find if this is a revert
 		reverts = find_reverts(message);
-		//if (reverts)
-		//	printf("	reverts=%s\n", reverts);
+		if (reverts)
+			dbg("	reverts=%s\n", reverts);
 
 		// Find if this commit fixes anything
 		fixes = find_fixes(message);
-		//if (fixes)
-		//	printf("	fixes=%s\n", fixes);
+		if (fixes)
+			dbg("	fixes=%s\n", fixes);
 
 		git_commit_free(commit);
 
@@ -651,7 +668,7 @@ static void loop_through_y(int major, int minor)
 	for (y = 1; y < 400; ++y) {
 		snprintf(str, sizeof(str), "v%d.%d.%d", major, minor, y);
 		if (!is_valid_release(str)) {
-			// printf("%s is NOT a valid release\n", str);
+			dbg("%s is NOT a valid release\n", str);
 			continue;
 		}
 
@@ -676,10 +693,10 @@ static void loop_through_x(int major)
 	for (minor = 0; minor < 40; ++minor) {
 		snprintf(str, sizeof(str), "v%d.%d", major, minor);
 		if (!is_valid_release(str)) {
-			// printf("%s is NOT a valid release\n", str);
+			dbg("%s is NOT a valid release\n", str);
 			continue;
 		}
-		// printf("%s is a valid release\n", str);
+		dbg("%s is a valid release\n", str);
 
 		if (minor != 0) {
 			char range1[256];
@@ -702,14 +719,14 @@ static void loop_through_2(void)
 	for (int x = 1; x < 41; ++x) {
 		snprintf(str, sizeof(str), "v2.6.%d", x);
 		if (!is_valid_release(str)) {
-			//printf("%s is NOT a valid release\n", str);
+			dbg("%s is NOT a valid release\n", str);
 			continue;
 		}
 
 		for (int y = 1; y < 101; ++y) {
 			snprintf(str, sizeof(str), "v2.6.%d.%d", x, y);
 			if (!is_valid_release(str)) {
-				//printf("%s is NOT a valid release\n", str);
+				dbg("%s is NOT a valid release\n", str);
 				continue;
 			}
 
