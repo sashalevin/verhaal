@@ -131,6 +131,52 @@ static int db_write_to_disk(void)
 	return ret;
 }
 
+static int db_read_from_disk(void)
+{
+	int ret;
+	sqlite3 *file;
+	sqlite3_backup *backup;
+	char *error;
+
+	// Not working yet...
+	return -1;
+
+	fprintf(stdout, "Reading from database %s\n", database_name);
+
+	// Open the on-disk database, if present
+	ret = sqlite3_open(database_name, &file);
+	if (ret != SQLITE_OK) {
+		fprintf(stderr, "Error, unable to open database file %s\n", database_name);
+		return ret;
+	}
+	// See if it really is our database, or if it's just an empty file
+	// (which sqlite3_open() will create if not present already)
+	const char *db_test_sql = "SELECT * from commits;";
+	ret = sqlite3_exec(file, db_test_sql, 0, 0, &error);
+	if (ret != SQLITE_OK) {
+		// Query did not work, so commits table is not there, let's
+		// abort and initialize this later on
+		fprintf(stderr, "on-disk database '%s' is not present, will initialize it now.\n",
+			database_name);
+		sqlite3_free(error);
+		sqlite3_close(file);
+		return ret;
+	}
+
+	// Open in-memory database to read into
+	ret = sqlite3_open(":memory:", &database);
+
+	backup = sqlite3_backup_init(database, "main", file, "main");
+	if (backup) {
+		sqlite3_backup_step(backup, -1);
+		sqlite3_backup_finish(backup);
+	}
+	ret = sqlite3_errcode(file);
+
+	sqlite3_close(file);
+	return ret;
+}
+
 static int git_init(void)
 {
 	int ret;
@@ -754,9 +800,13 @@ int main(void)
 
 	fprintf(stdout, "%s version %s\n", PACKAGE_NAME, VERSION);
 
-	ret = db_init();
-	if (ret)
-		goto exit;
+	ret = db_read_from_disk();
+	if (ret) {
+		// Database is not present, so let's initialize it ourself
+		ret = db_init();
+		if (ret)
+			goto exit;
+	}
 
 	ret = git_init();
 	if (ret)
