@@ -69,8 +69,8 @@ static int db_init(void)
 	// end.  Hack, yes, but fast, blazingly.
 	ret = sqlite3_open(":memory:", &database);
 	if (ret != SQLITE_OK) {
-		fprintf(stderr, "Error opening database %s %s\n",
-			database_name, sqlite3_errmsg(database));
+		fprintf(stderr, "Error opening in-memory database %s\n",
+			sqlite3_errmsg(database));
 		sqlite3_close(database);
 		return ret;
 	}
@@ -165,6 +165,11 @@ static int db_read_from_disk(void)
 
 	// Open in-memory database to read into
 	ret = sqlite3_open(":memory:", &database);
+	if (ret != SQLITE_OK) {
+		fprintf(stderr, "Error opening in-memory database %s\n", sqlite3_errmsg(database));
+		sqlite3_close(database);
+		return ret;
+	}
 
 	backup = sqlite3_backup_init(database, "main", file, "main");
 	if (backup) {
@@ -172,6 +177,8 @@ static int db_read_from_disk(void)
 		sqlite3_backup_finish(backup);
 	}
 	ret = sqlite3_errcode(file);
+	if (ret)
+		fprintf(stderr, "Error reading from database into memory: %d\n", ret);
 
 	sqlite3_close(file);
 	return ret;
