@@ -504,6 +504,15 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 
 	dbg("%s: start=%s, end=%s, minor=%d\n", __func__, start, end, minor);
 
+	// Let's first see if these are a few "known" ranges that we know we can
+	// never find, thanks to the start of the git repo and how the first few
+	// tags were set up.
+	// (i.e. v2.6.11 is NOT a real commit, but rather a tree.)
+	if ((strcmp(start, "2.6.11") == 0) || (strcmp(end, "2.6.11") == 0)) {
+		dbg("skipping invalid 2.6.11 commit as that's just a mess\n");
+		return 0;
+	}
+
 	// Loop through all git ids in this range, take the id and version and store it in the
 	// database
 	ret = git_revwalk_new(&walker, git_repo);
