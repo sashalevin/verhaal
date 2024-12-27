@@ -79,8 +79,8 @@ verhaal_sources = [
   'main.c',
 ]
 
-libsqlite3  = dependency('sqlite3', version: '>= 3.47')
-libgit2     = dependency('libgit2', version: '>= 1.8')
-libpcre2    = dependency('libpcre2-8', version: '>= 10.44')
+libsqlite3  = dependency('sqlite3', version: '>= 3.45')
+libgit2     = dependency('libgit2', version: '>= 1.7')
+libpcre2    = dependency('libpcre2-8', version: '>= 10.42')
 
 executable('verhaal', verhaal_sources, dependencies: [libsqlite3, libgit2, libpcre2], install: true)
