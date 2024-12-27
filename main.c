@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdbool.h>
+#include <getopt.h>
 #include <sqlite3.h>
 #include <git2.h>
 
@@ -806,9 +807,45 @@ static void loop_through_2(void)
 	}
 }
 
+static const char *short_options = "Vvhd:";
+
+static const struct option long_options[] = {
+	{
+		.val =		'V',
+		.name =		"version",
+		.has_arg =	no_argument,
+		.flag =		NULL,
+	},
+	{
+		.val =		'v',
+		.name =		"verbose",
+		.has_arg =	no_argument,
+		.flag =		NULL,
+	},
+	{
+		.val =		'h',
+		.name =		"help",
+		.has_arg =	no_argument,
+		.flag =		NULL,
+	},
+	{
+		.val =		'd',
+		.name =		"database",
+		.has_arg =	required_argument,
+		.flag =		NULL,
+	},
+};
+
+static void help(void)
+{
+	fprintf(stdout, "invalid option\n");
+	exit(1);
+}
+
 static int get_options(int argc, char *argv[])
 {
 	const char *env_string;
+	int option;
 
 	env_string = getenv("CVEKERNELTREE");
 	if (!env_string) {
@@ -818,7 +855,16 @@ static int get_options(int argc, char *argv[])
 	}
 	git_repo_location = strdup(env_string);
 
-
+	while ((option = getopt_long(argc, argv, short_options, long_options, NULL)) != EOF) {
+		switch (option) {
+		case 'V':
+		case 'v':
+		case 'd':
+		case 'h':
+		default:
+			help();
+		}
+	}
 
 	return 0;
 }
