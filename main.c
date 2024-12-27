@@ -595,7 +595,7 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 		if (ret != SQLITE_DONE)
 			fprintf(stderr, "Error inserting row %s\n", sqlite3_errmsg(database));
 
-		ret = sqlite3_finalize(sql_stmt); //TODO: fixes sqlite3 leak, but benchmark it first!
+		ret = sqlite3_finalize(sql_stmt);
 		if (upstream)
 			free(upstream);
 		if (reverts)
