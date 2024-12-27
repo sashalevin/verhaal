@@ -1,21 +1,22 @@
 SPDXVersion: SPDX-2.1
 DataLicense: CC0-1.0
 SPDXID: SPDXRef-DOCUMENT
-DocumentName: merk
-DocumentNamespace: http://spdx.org/spdxdocs/spdx-v2.1-4d9420db-f6b9-4a7c-8298-a69e84bc13da
+DocumentName: verhaal
+DocumentNamespace: http://spdx.org/spdxdocs/spdx-v2.1-8f33d5f6-1665-4c1c-ab2f-c11b1afd8b33
 Creator: Person: Greg Kroah-Hartman <gregkh@linuxfoundation.org> ()
 Creator: Organization: The Linux Foundation ()
-Creator: Tool: reuse-4.0.3
-Created: 2024-12-22T06:57:54Z
+Creator: Tool: reuse-5.0.2
+Created: 2024-12-27T08:26:28Z
 CreatorComment: <text>This document was created automatically using available reuse information consistent with REUSE.</text>
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-843223e52401cc1f6a597546e403d97f
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-8bafa3ce6cb83572d8854cdd9671d08c
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-af4936c2bbcad33128413a97e2cb8289
-Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-3ca130e13493add245d6e396d0630270
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-724f436ec579433db0768348b463d4af
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-c8308e3318583e087769426a32d4ce5b
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-64e0d95d2d264a1f41b00250ca41c585
-Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-8e5c79b8ed1f4dfa1116547e66a775c6
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-ad8867153795ca6b5554a16d7a1e6e22
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-937fd47c3181385e1b0bb74769ca92ad
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-342457f53bd0f83969b32dc34e5050e9
 
 FileName: ./.editorconfig
 SPDXID: SPDXRef-843223e52401cc1f6a597546e403d97f
@@ -38,8 +39,8 @@ LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
 
-FileName: ./id_found_in_merk
-SPDXID: SPDXRef-3ca130e13493add245d6e396d0630270
+FileName: ./id_found_in
+SPDXID: SPDXRef-724f436ec579433db0768348b463d4af
 FileChecksum: SHA1: 2c2a32f5827a3afeaeb4c1278e7a2e62ceeb0cdf
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
@@ -60,8 +61,8 @@ LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
 
 FileName: ./main.c
-SPDXID: SPDXRef-8e5c79b8ed1f4dfa1116547e66a775c6
-FileChecksum: SHA1: 7bd911cbc1b8409a18bc16379a424203cb9a6a5b
+SPDXID: SPDXRef-ad8867153795ca6b5554a16d7a1e6e22
+FileChecksum: SHA1: c7323e8c2d9def1dfe28b6ade9080fbe3c9539fc
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
@@ -72,3 +73,11 @@ FileChecksum: SHA1: e80f21f1d10b57c28036923ab581ad0e335708d6
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
+
+FileName: ./old/create_kernel_files_sql
+SPDXID: SPDXRef-342457f53bd0f83969b32dc34e5050e9
+FileChecksum: SHA1: 6e70b7a6f428133b93a32353077080af89c8f1b7
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright 2020,2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
+
