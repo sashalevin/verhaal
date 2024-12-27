@@ -29,10 +29,9 @@
 #include <pcre2.h>	// Now we have 2 problems...
 
 static git_repository *git_repo;
-
 static char *git_repo_location;
-
-static const char *database_name = "commits.db";
+static char *database_name;
+static const char *database_name_default = "commits.db";
 
 // We have a PRIMARY KEY although it is probably not needed because git ensures us of this anyway...
 static const char *db_create_sql =	"CREATE TABLE IF NOT EXISTS commits "	\
@@ -882,11 +881,17 @@ static int get_options(int argc, char *argv[])
 			exit(0);
 
 		case 'd':
+			database_name = strdup(optarg);
+			break;
+
 		case 'h':
 		default:
 			help();
 		}
 	}
+
+	if (database_name == NULL)
+		database_name = strdup(database_name_default);
 
 	return 0;
 }
@@ -901,7 +906,8 @@ int main(int argc, char *argv[])
 	if (ret)
 		return ret;
 
-	fprintf(stdout, "Using stable kernel tree at %s\n", git_repo_location);
+	fprintf(stdout, "	Reading from stable kernel tree at '%s'\n", git_repo_location);
+	fprintf(stdout, "	Writing to database file '%s'\n", database_name);
 
 	ret = db_read_from_disk();
 	if (ret) {
@@ -936,6 +942,7 @@ int main(int argc, char *argv[])
 	db_write_to_disk();
 
 exit:
+	free(database_name);
 	free(git_repo_location);
 	db_shutdown();
 	return ret;
