@@ -453,6 +453,7 @@ exit:
 static char *find_fixes(const char *message)
 {
 	char *final, *temp;
+
 	final = malloc(1024);
 	memset(final, 0x00, 1024);
 	temp = malloc(1024);
@@ -589,9 +590,8 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 			sqlite3_bind_text(sql_stmt, 5, fixes, strlen(fixes), NULL);
 
 		ret = sqlite3_step(sql_stmt);
-		if (ret != SQLITE_DONE) {
+		if (ret != SQLITE_DONE)
 			fprintf(stderr, "Error inserting row %s\n", sqlite3_errmsg(database));
-		}
 
 		if (upstream)
 			free(upstream);
