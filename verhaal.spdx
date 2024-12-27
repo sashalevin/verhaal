@@ -2,21 +2,22 @@ SPDXVersion: SPDX-2.1
 DataLicense: CC0-1.0
 SPDXID: SPDXRef-DOCUMENT
 DocumentName: verhaal
-DocumentNamespace: http://spdx.org/spdxdocs/spdx-v2.1-5de8e99e-0c4c-4bfb-b4bb-6dea7e6b6b18
+DocumentNamespace: http://spdx.org/spdxdocs/spdx-v2.1-5599a3d3-44dc-4d15-9981-e4a8a269f4dd
 Creator: Person: Greg Kroah-Hartman <gregkh@linuxfoundation.org> ()
 Creator: Organization: The Linux Foundation ()
 Creator: Tool: reuse-5.0.2
-Created: 2024-12-27T12:00:07Z
+Created: 2024-12-27T16:58:22Z
 CreatorComment: <text>This document was created automatically using available reuse information consistent with REUSE.</text>
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-fe13e6ad089859a427c0269d425f03b8
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-8bafa3ce6cb83572d8854cdd9671d08c
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-997890e8a17bfbcc39fb046d2a3d7456
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-4e1a3184a0a4cd55ff122534be31e1f4
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-af4936c2bbcad33128413a97e2cb8289
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-724f436ec579433db0768348b463d4af
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-c8308e3318583e087769426a32d4ce5b
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-64e0d95d2d264a1f41b00250ca41c585
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-8f17342bd4b24c55d5cef1cae0b2340b
-Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-937fd47c3181385e1b0bb74769ca92ad
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-19261f64bf876b292ae9bd604417c35d
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-342457f53bd0f83969b32dc34e5050e9
 
 FileName: ./.editorconfig
@@ -36,6 +37,13 @@ FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoun
 FileName: ./README.md
 SPDXID: SPDXRef-997890e8a17bfbcc39fb046d2a3d7456
 FileChecksum: SHA1: eca4b8258aabdc2fa0a8b58c1b6e72d29e17034d
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
+
+FileName: ./TODO.md
+SPDXID: SPDXRef-4e1a3184a0a4cd55ff122534be31e1f4
+FileChecksum: SHA1: ee380c923940430a3a6807e4d9f921738254c146
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
@@ -76,8 +84,8 @@ LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
 
 FileName: ./meson.build
-SPDXID: SPDXRef-937fd47c3181385e1b0bb74769ca92ad
-FileChecksum: SHA1: e80f21f1d10b57c28036923ab581ad0e335708d6
+SPDXID: SPDXRef-19261f64bf876b292ae9bd604417c35d
+FileChecksum: SHA1: 7011e9946191af5f7a22cfdbbc8df91e378deba5
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
