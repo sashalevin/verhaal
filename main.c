@@ -29,7 +29,7 @@
 
 static git_repository *git_repo;
 
-static const char *git_repo_location = "/home/gregkh/linux/stable/linux-stable/";
+static char *git_repo_location;
 
 static const char *database_name = "commits.db";
 
@@ -806,11 +806,34 @@ static void loop_through_2(void)
 	}
 }
 
-int main(void)
+static int get_options(int argc, char *argv[])
+{
+	const char *env_string;
+
+	env_string = getenv("CVEKERNELTREE");
+	if (!env_string) {
+		fprintf(stderr, "Error: Environment variable CVEERNELTREE must be set to point to\n");
+		fprintf(stderr, "       the Linux kernel stable git repository directory.\n");
+		return -1;
+	}
+	git_repo_location = strdup(env_string);
+
+
+
+	return 0;
+}
+
+int main(int argc, char *argv[])
 {
 	int ret;
 
 	fprintf(stdout, "%s version %s\n", PACKAGE_NAME, VERSION);
+
+	ret = get_options(argc, argv);
+	if (ret)
+		return ret;
+
+	fprintf(stdout, "Using stable kernel tree at %s\n", git_repo_location);
 
 	ret = db_read_from_disk();
 	if (ret) {
@@ -845,6 +868,7 @@ int main(void)
 	db_write_to_disk();
 
 exit:
+	free(git_repo_location);
 	db_shutdown();
 	return ret;
 }
