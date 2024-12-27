@@ -838,7 +838,15 @@ static const struct option long_options[] = {
 
 static void help(void)
 {
-	fprintf(stdout, "invalid option\n");
+	fprintf(stdout, "  Creates a database file of all of the Linux stable branch commits.\n");
+	fprintf(stdout, "  This is used by the vulns.git CVE scripts, and other tools to track\n");
+	fprintf(stdout, "  commits as they are made across multiple branches.\n\n");
+	fprintf(stdout, "  Valid options:\n");
+	fprintf(stdout, "	--help  -h	This message\n");
+	fprintf(stdout, "	--verbose -V	Turn debugging messages on (warning, lots of junk here)\n");
+	fprintf(stdout, "	--version -v	Print the version of the program and exit\n");
+	fprintf(stdout, "	--database=	Change the default database name from '%s' to the provided one\n",
+		database_name);
 	exit(1);
 }
 
@@ -858,7 +866,12 @@ static int get_options(int argc, char *argv[])
 	while ((option = getopt_long(argc, argv, short_options, long_options, NULL)) != EOF) {
 		switch (option) {
 		case 'V':
+			debug = true;
+			break;
+
 		case 'v':
+			exit(0);
+
 		case 'd':
 		case 'h':
 		default:
