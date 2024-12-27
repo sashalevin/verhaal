@@ -97,6 +97,7 @@ static int db_init(void)
 		return ret;
 	}
 
+	sqlite3_free(error);
 	return ret;
 }
 
@@ -202,6 +203,7 @@ static int git_init(void)
 static void git_shutdown(void)
 {
 	git_repository_free(git_repo);
+	git_libgit2_shutdown();
 }
 
 static bool is_valid_release(const char *version)
@@ -593,6 +595,7 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 		if (ret != SQLITE_DONE)
 			fprintf(stderr, "Error inserting row %s\n", sqlite3_errmsg(database));
 
+		ret = sqlite3_finalize(sql_stmt); //TODO: fixes sqlite3 leak, but benchmark it first!
 		if (upstream)
 			free(upstream);
 		if (reverts)
