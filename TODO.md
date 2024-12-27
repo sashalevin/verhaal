@@ -1,8 +1,16 @@
+<!---
+SPDX-License-Identifier: GPL-2.0-only
+Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+-->
+# TODO list
+
 Some things to work on in the future:
 
-varhaal:
+## varhaal
+
   - read database from disk, and then only add the "new" releases instead of
     creating it all the time
+
   - properly deal with "Fixes:" commits found, so that they can be tracked
     through the database.  Should require at least:
     - making them "full" sha1 values
@@ -10,6 +18,7 @@ varhaal:
       that ok for querying?)
     - use that information for something (better fixes search?)
 
-id_found_in
+## id_found_in
+
   - handle "short" sha1 values sent to
 
