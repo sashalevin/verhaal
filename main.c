@@ -868,7 +868,7 @@ static int get_options(int argc, char *argv[])
 
 	env_string = getenv("CVEKERNELTREE");
 	if (!env_string) {
-		fprintf(stderr, "Error: Environment variable CVEERNELTREE must be set to point to\n");
+		fprintf(stderr, "Error: Environment variable 'CVEKERNELTREE' must be set to point to\n");
 		fprintf(stderr, "       the Linux kernel stable git repository directory.\n");
 		return -1;
 	}
