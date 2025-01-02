@@ -28,6 +28,8 @@
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>	// Now we have 2 problems...
 
+#include "terminal.h"
+
 static git_repository *git_repo;
 static char *git_repo_location;
 static char *database_name;
@@ -113,7 +115,8 @@ static int db_write_to_disk(void)
 	sqlite3 *file;
 	sqlite3_backup *backup;
 
-	fprintf(stdout, "Writing database to %s\n", database_name);
+	terminal_fprintf(stdout, "  Writing to database file '"
+			 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT "'\n", database_name);
 
 	ret = sqlite3_open(database_name, &file);
 	if (ret != SQLITE_OK) {
@@ -514,6 +517,10 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 		dbg("skipping invalid 2.6.11 commit as that's just a mess\n");
 		return 0;
 	}
+	if ((strcmp(end, "3.16.35") == 0) || (strcmp(end, "2.6.11") == 0)) {
+		dbg("skipping invalid 3.16.35 commit as there was a 'break' there\n");
+		return 0;
+	}
 
 	// Loop through all git ids in this range, take the id and version and store it in the
 	// database
@@ -532,7 +539,10 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 		return ret;
 	}
 
-	fprintf(stdout, "Parsing kernel commits from v%s to v%s\n", start, end);
+	terminal_fprintf(stdout, TERMINAL_SAVE_CURSOR);
+	terminal_fprintf(stdout, "  Processing kernel commits from "
+			 TERMINAL_FG_BLUE "v%s" TERMINAL_FG_DEFAULT " to "
+			 TERMINAL_FG_BLUE "v%s" TERMINAL_FG_DEFAULT "" TERMINAL_CLEAR_RIGHT, start, end);
 	fflush(stdout);
 
 	while (!git_revwalk_next(&oid, walker)) {
@@ -607,6 +617,8 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 
 exit:
 	git_revwalk_free(walker);
+	terminal_fprintf(stdout, TERMINAL_RESTORE_CURSOR);
+	fflush(stdout);
 	return ret;
 }
 
@@ -675,7 +687,8 @@ static int create_kernel_range_rc(void)
 	if (ret)
 		fprintf(stderr, "git_describe_format() failed: %d\n", ret);
 
-	fprintf(stdout, "git head tag = %s\n", buf.ptr);
+	terminal_fprintf(stdout, "  git head tag = " TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT "\n",
+			 buf.ptr);
 
 	head_tag = strdup(buf.ptr);
 
@@ -903,14 +916,18 @@ int main(int argc, char *argv[])
 {
 	int ret;
 
-	fprintf(stdout, "%s version %s\n", PACKAGE_NAME, VERSION);
+	terminal_fprintf(stdout, TERMINAL_FG_GREEN "%s" TERMINAL_FG_DEFAULT
+			 " version " TERMINAL_FG_BLUE "%s" TERMINAL_FG_DEFAULT "\n",
+			 PACKAGE_NAME, VERSION);
 
 	ret = get_options(argc, argv);
 	if (ret)
 		return ret;
 
-	fprintf(stdout, "	Reading from stable kernel tree at '%s'\n", git_repo_location);
-	fprintf(stdout, "	Writing to database file '%s'\n", database_name);
+	terminal_fprintf(stdout, "  Reading from stable kernel tree at '"
+			 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT "'\n", git_repo_location);
+	terminal_fprintf(stdout, "  Databse file is '"
+			 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT "'\n", database_name);
 
 	ret = db_read_from_disk();
 	if (ret) {
@@ -937,8 +954,12 @@ int main(int argc, char *argv[])
 	create_kernel_range_major("4.20", "5.0");
 	create_kernel_range_major("5.19", "6.0");
 
+	terminal_fprintf(stdout, "\n");
+
 	// Fill in the last little bit of -rc release information if we have it in the tree
 	create_kernel_range_rc();
+
+	terminal_fprintf(stdout, "\n");
 
 	git_shutdown();
 
