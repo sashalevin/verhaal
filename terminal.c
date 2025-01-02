@@ -16,24 +16,35 @@
 #include <unistd.h>
 #include "terminal.h"
 
-static bool color_mode(FILE *file)
-{
-	static int mode = -1;
-	const char *var;
+// Check for the NO_COLOR environment variable as per the https://no-color.org/ "standard"
+static bool color = true;
 
-	if (mode != -1)
-		return mode;
-	var = getenv("WG_COLOR_MODE");
-	if (var && !strcmp(var, "always"))
-		mode = true;
-	else if (var && !strcmp(var, "never"))
-		mode = false;
-	else
-		return isatty(fileno(file));
-	return mode;
+static bool no_color_test(void)
+{
+	static bool checked = false;
+	const char *no_color;
+
+	if (checked)
+		return color;
+
+	no_color = getenv("NO_COLOR");
+	if (no_color && no_color[0] != '\0')
+		color = false;
+
+	checked = true;
+	return color;
 }
 
-__attribute__((__format__(printf, 2, 0))) static void filter_ansi(FILE *file, const char *fmt, va_list args)
+static bool color_mode(FILE *file)
+{
+	if (no_color_test() == false)
+		return false;
+
+	return isatty(fileno(file));
+}
+
+__attribute__((__format__(printf, 2, 0)))
+static void filter_ansi(FILE *file, const char *fmt, va_list args)
 {
 	char *str = NULL;
 	size_t len, i, j;
