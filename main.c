@@ -135,15 +135,22 @@ static int db_write_to_disk(void)
 	return ret;
 }
 
+/*
+ * So, it turns out it is FASTER to just write out the whole git history at
+ * once, instead of attempting to read it from disk, then query the database
+ * for every minor kernel release to see if it is already in the database
+ * with something like a sql statement of:
+ *	SELECT COUNT() FROM commits WHERE release='6.1';
+ * This function has the logic to read the database from the disk, but really,
+ * don't call it, it's just here to show the attempt.
+ */
+#if 0
 static int db_read_from_disk(void)
 {
 	int ret;
 	sqlite3 *file;
 	sqlite3_backup *backup;
 	char *error;
-
-	// Not working yet...
-	return -1;
 
 	fprintf(stdout, "Reading from database %s\n", database_name);
 
@@ -187,6 +194,7 @@ static int db_read_from_disk(void)
 	sqlite3_close(file);
 	return ret;
 }
+#endif
 
 static int git_init(void)
 {
@@ -929,13 +937,9 @@ int main(int argc, char *argv[])
 	terminal_fprintf(stdout, "  Databse file is '"
 			 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT "'\n", database_name);
 
-	ret = db_read_from_disk();
-	if (ret) {
-		// Database is not present, so let's initialize it ourself
-		ret = db_init();
-		if (ret)
-			goto exit;
-	}
+	ret = db_init();
+	if (ret)
+		goto exit;
 
 	ret = git_init();
 	if (ret)
