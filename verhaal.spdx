@@ -2,11 +2,11 @@ SPDXVersion: SPDX-2.1
 DataLicense: CC0-1.0
 SPDXID: SPDXRef-DOCUMENT
 DocumentName: verhaal
-DocumentNamespace: http://spdx.org/spdxdocs/spdx-v2.1-5599a3d3-44dc-4d15-9981-e4a8a269f4dd
+DocumentNamespace: http://spdx.org/spdxdocs/spdx-v2.1-24ee2c93-c37b-4f7a-a7ec-5279131a6deb
 Creator: Person: Greg Kroah-Hartman <gregkh@linuxfoundation.org> ()
 Creator: Organization: The Linux Foundation ()
 Creator: Tool: reuse-5.0.2
-Created: 2024-12-27T16:58:22Z
+Created: 2025-01-02T15:03:53Z
 CreatorComment: <text>This document was created automatically using available reuse information consistent with REUSE.</text>
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-fe13e6ad089859a427c0269d425f03b8
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-8bafa3ce6cb83572d8854cdd9671d08c
@@ -16,9 +16,11 @@ Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-af4936c2bbcad33128413a97e2cb828
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-724f436ec579433db0768348b463d4af
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-c8308e3318583e087769426a32d4ce5b
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-64e0d95d2d264a1f41b00250ca41c585
-Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-8f17342bd4b24c55d5cef1cae0b2340b
-Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-19261f64bf876b292ae9bd604417c35d
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-3b0e5b66eb6dddc08e028b6ae80e460f
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-1608808afb2f5182696f9a2a568cf017
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-342457f53bd0f83969b32dc34e5050e9
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-c3467b4463048093ded9e801fc528952
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-3f2b23d9a746135e8af7743f1eb8a7ae
 
 FileName: ./.editorconfig
 SPDXID: SPDXRef-fe13e6ad089859a427c0269d425f03b8
@@ -77,15 +79,15 @@ LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
 
 FileName: ./main.c
-SPDXID: SPDXRef-8f17342bd4b24c55d5cef1cae0b2340b
-FileChecksum: SHA1: 2fc8ae76042b5134364f31e6d5c97e4323b26500
+SPDXID: SPDXRef-3b0e5b66eb6dddc08e028b6ae80e460f
+FileChecksum: SHA1: eaf927c254d2ae2e0be41540f04aa0b8e753f9b6
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
 
 FileName: ./meson.build
-SPDXID: SPDXRef-19261f64bf876b292ae9bd604417c35d
-FileChecksum: SHA1: 7011e9946191af5f7a22cfdbbc8df91e378deba5
+SPDXID: SPDXRef-1608808afb2f5182696f9a2a568cf017
+FileChecksum: SHA1: 97e6d427237faffa8a21304265aff91439bc3eba
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
@@ -96,4 +98,18 @@ FileChecksum: SHA1: 6e70b7a6f428133b93a32353077080af89c8f1b7
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright 2020,2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
+
+FileName: ./terminal.c
+SPDXID: SPDXRef-c3467b4463048093ded9e801fc528952
+FileChecksum: SHA1: cda9877a28649c9a40bd39f732d0d7caa6c874a8
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.</text>
+
+FileName: ./terminal.h
+SPDXID: SPDXRef-3f2b23d9a746135e8af7743f1eb8a7ae
+FileChecksum: SHA1: d57bf1768cc993e5c445bf213e5d87de6fdf6162
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.</text>
 
