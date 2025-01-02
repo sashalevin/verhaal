@@ -77,6 +77,7 @@ add_project_arguments('-include', 'config.h', language : 'c')
 ##########################
 verhaal_sources = [
   'main.c',
+  'terminal.c',
 ]
 
 libsqlite3  = dependency('sqlite3', version: '>= 3.45')
