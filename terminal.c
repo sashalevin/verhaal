@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-only
 /*
  * Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.
+ *
+ * Slightly modified from Jason's original code by Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+ * All bugs are mine, not Jason's.
  */
 
 #include <ctype.h>
@@ -11,6 +14,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include "terminal.h"
 
 static bool color_mode(FILE *file)
 {
@@ -29,7 +33,7 @@ static bool color_mode(FILE *file)
 	return mode;
 }
 
-static void filter_ansi(FILE *file, const char *fmt, va_list args)
+__attribute__((__format__(printf, 2, 0))) static void filter_ansi(FILE *file, const char *fmt, va_list args)
 {
 	char *str = NULL;
 	size_t len, i, j;
