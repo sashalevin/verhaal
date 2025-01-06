@@ -371,6 +371,34 @@ exit:
 	return upstream;
 }
 
+// Turn a "short" Fixes SHA1 into a "full" SHA1 if it is present in the git tree
+static char *fixes_expand(char *fix)
+{
+	git_revspec revspec;
+	const git_oid *oid;
+	char *sha;
+
+	int ret = git_revparse(&revspec, git_repo, fix);
+
+	if (ret) {
+		// fix was not present!
+		// FIXME for now just return the string given to us, we'll fix this later...
+		//printf("%s is NOT a valid fix in the kernel tree, please fix...\n", fix);
+		return fix;
+	}
+
+	// Turn the git oid into a full sha1
+	oid = git_object_id(revspec.from);
+	sha = malloc(100);
+	git_oid_tostr(sha, 100, oid);
+	dbg("		short fixes: %s, expanded sha = %s\n", fix, sha);
+
+	git_object_free(revspec.from);
+	git_object_free(revspec.to);
+	free(fix);
+	return sha;
+}
+
 #if 0
 // Test message to check for multiple Fixes: lines
 static const char *test_message =
@@ -381,11 +409,6 @@ static const char *test_message =
 "    Reviewed-by: Eduard Zingerman <eddyz87@gmail.com>\n"
 "    Co-developed-by: Jiri Olsa <jolsa@kernel.org>";
 #endif
-
-// TODO : disambiguate the fixes sha1 values so that they are the "full" commit id to make searching
-// "more correct" later on.  https://lore.kernel.org/r/20241218233613.219345-1-sashal@kernel.org has
-// a bash script for this type of thing as an example
-
 
 // Handle a single "Fixes:" line
 static char *find_fix(const char *line)
@@ -480,7 +503,8 @@ static char *find_fixes(const char *message)
 		//fprintf(stdout, "line: '%s'\n", line);
 		char *f = find_fix(line);
 		if (f) {
-			// FIXME: turn this into a fully-formed SHA1, not just an abbreviated one
+			// turn this into a fully-formed SHA1, not just an abbreviated one
+			f = fixes_expand(f);
 			if (strlen(final) == 0)
 				snprintf(temp, 1024, "%s", f);
 			else
