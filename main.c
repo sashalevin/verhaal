@@ -615,7 +615,7 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 
 		git_commit_free(commit);
 
-		// Save it in the databse
+		// Save it in the database
 		ret = sqlite3_prepare(database, db_insert_sql, -1, &sql_stmt, NULL);
 		if (ret) {
 			fprintf(stderr, "Error preparing sql statement %s\n",
@@ -958,7 +958,7 @@ int main(int argc, char *argv[])
 
 	terminal_fprintf(stdout, "  Reading from stable kernel tree at '"
 			 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT "'\n", git_repo_location);
-	terminal_fprintf(stdout, "  Databse file is '"
+	terminal_fprintf(stdout, "  Database file is '"
 			 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT "'\n", database_name);
 
 	ret = db_init();
