@@ -24,11 +24,21 @@
 #include <getopt.h>
 #include <sqlite3.h>
 #include <git2.h>
+#include "ccan/list/list.h"
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>	// Now we have 2 problems...
 
 #include "terminal.h"
+
+struct commit {
+	struct list_head node;
+	char *id;
+	char *release;
+	char *mainline_id;
+	char *reverts;
+	char *fixes;
+};
 
 static git_repository *git_repo;
 static char *git_repo_location;
