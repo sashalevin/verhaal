@@ -1,1 +1,4 @@
-fix revert parsing for 199f0452873741fa4b8d4d88958e929030b2f92b
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+
+- fix revert parsing for 199f0452873741fa4b8d4d88958e929030b2f92b
