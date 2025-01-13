@@ -76,9 +76,9 @@ add_project_arguments('-include', 'config.h', language : 'c')
 # lsusb build instructions
 ##########################
 verhaal_sources = [
-  'main.c',
-  'search.c',
-  'terminal.c',
+  'src/main.c',
+  'src/search.c',
+  'src/terminal.c',
 ]
 
 libsqlite3  = dependency('sqlite3', version: '>= 3.45')
