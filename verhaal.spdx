@@ -2,11 +2,11 @@ SPDXVersion: SPDX-2.1
 DataLicense: CC0-1.0
 SPDXID: SPDXRef-DOCUMENT
 DocumentName: verhaal
-DocumentNamespace: http://spdx.org/spdxdocs/spdx-v2.1-e469b253-3bed-4964-b5af-be3eaf5696c1
+DocumentNamespace: http://spdx.org/spdxdocs/spdx-v2.1-5abb6672-e636-45de-b5ab-8cf84577a55a
 Creator: Person: Greg Kroah-Hartman <gregkh@linuxfoundation.org> ()
 Creator: Organization: The Linux Foundation ()
 Creator: Tool: reuse-5.0.2
-Created: 2025-01-10T14:13:18Z
+Created: 2025-01-13T12:33:22Z
 CreatorComment: <text>This document was created automatically using available reuse information consistent with REUSE.</text>
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-fe13e6ad089859a427c0269d425f03b8
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-8bafa3ce6cb83572d8854cdd9671d08c
@@ -23,11 +23,13 @@ Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-830fc01dabc63645c1547b64e529769
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-724f436ec579433db0768348b463d4af
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-c8308e3318583e087769426a32d4ce5b
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-64e0d95d2d264a1f41b00250ca41c585
-Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-c00786be15e3c423175858380c7c08ea
-Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-52e9229bc5d47a3c2cf3fbb5d88f34c4
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-67a62759c751a66363e87240f1b86ef7
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-fedd865af02c66835005fbd221f180ac
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-342457f53bd0f83969b32dc34e5050e9
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-38f5082e534c18ecdebe235fbb4002c8
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-c3467b4463048093ded9e801fc528952
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-3f2b23d9a746135e8af7743f1eb8a7ae
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-2173887167da8e637b741d28de44a05e
 
 FileName: ./.editorconfig
 SPDXID: SPDXRef-fe13e6ad089859a427c0269d425f03b8
@@ -135,15 +137,15 @@ LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
 
 FileName: ./main.c
-SPDXID: SPDXRef-c00786be15e3c423175858380c7c08ea
-FileChecksum: SHA1: cf95a44c2a6921d45723858eb6997458d2e006ca
+SPDXID: SPDXRef-67a62759c751a66363e87240f1b86ef7
+FileChecksum: SHA1: 7ac2d96cdfea37092fec203f5d3a80df9caf202d
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
 
 FileName: ./meson.build
-SPDXID: SPDXRef-52e9229bc5d47a3c2cf3fbb5d88f34c4
-FileChecksum: SHA1: 2a0e4f5940092777be42fad2e91013fcf69d6472
+SPDXID: SPDXRef-fedd865af02c66835005fbd221f180ac
+FileChecksum: SHA1: 7371d9355d88850478cf763ea295e39615014b6b
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
@@ -154,6 +156,13 @@ FileChecksum: SHA1: 6e70b7a6f428133b93a32353077080af89c8f1b7
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright 2020,2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
+
+FileName: ./search.c
+SPDXID: SPDXRef-38f5082e534c18ecdebe235fbb4002c8
+FileChecksum: SHA1: 5b669dd9e2e03a7fda5d4cf99603622135179b6c
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright (c) 2024-2025 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
 
 FileName: ./terminal.c
 SPDXID: SPDXRef-c3467b4463048093ded9e801fc528952
@@ -168,4 +177,11 @@ FileChecksum: SHA1: d57bf1768cc993e5c445bf213e5d87de6fdf6162
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.</text>
+
+FileName: ./verhaal.h
+SPDXID: SPDXRef-2173887167da8e637b741d28de44a05e
+FileChecksum: SHA1: 26ba4510df176ec71c8af11e37e7c9fb697bd202
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright (c) 2024-2025 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
 
