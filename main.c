@@ -29,6 +29,7 @@
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>	// Now we have 2 problems...
 
+#include "verhaal.h"
 #include "terminal.h"
 
 struct commit {
