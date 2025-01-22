@@ -6,14 +6,10 @@
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
-#include <stdbool.h>
-#include <git2.h>
-#include "ccan/list/list.h"
 
 #define PCRE2_CODE_UNIT_WIDTH 8
 #include <pcre2.h>	// Now we have 2 problems...
 
-#include "terminal.h"
 #include "verhaal.h"
 
 
@@ -67,5 +63,4 @@ char *search_string(const char *string, const char *pattern)
 exit:
 	return match;
 }
-
 
