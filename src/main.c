@@ -242,78 +242,19 @@ static bool is_valid_release(const char *version)
 
 static char *find_upstream(const char *message)
 {
-	int ret;
-	char *upstream = NULL;
-	pcre2_code *re_upstream;
-	pcre2_code *re_commit_id;
-	int errornumber;
-	pcre2_match_data *match_upstream;
-	pcre2_match_data *match_commit;
-	PCRE2_SIZE erroroffset;
-	PCRE2_SPTR upstream_pattern = (PCRE2_SPTR8)".*upstream.*\n?";
-	PCRE2_SPTR sha_pattern = (PCRE2_SPTR8)"[a-f0-9]{40,}";
+	char *upstream;
+	char *sha1;
 
-	// We want to search all lines, find one with "upstream" on it, and then
-	// find the sha1 in that line.  Takes two passes, if I was really good, I
-	// could do it all in one regular expression.  As it is, it takes me two...
-	// Here it is in bash:
-	// mainlinesha=$(grep -i upstream ${message}| grep -oE "[a-f0-9]{40,}")
+	upstream = search_string(message, ".*upstream.*\n?");
 
-	// initialize our regular expression to find the upstream commit id
-	re_upstream = pcre2_compile(upstream_pattern, PCRE2_ZERO_TERMINATED,
-				    PCRE2_CASELESS, &errornumber, &erroroffset, NULL);
-	if (!re_upstream) {
-		fprintf(stderr, "pcre regex for upstream is not created.\n");
-		goto exit;
+	if (upstream) {
+		sha1 = search_string(upstream, "[a-f0-9]{40,}");
+		free(upstream);
+		return sha1;
 	}
-	match_upstream = pcre2_match_data_create_from_pattern(re_upstream, NULL);
-
-	re_commit_id = pcre2_compile(sha_pattern, PCRE2_ZERO_TERMINATED,
-				     PCRE2_CASELESS, &errornumber, &erroroffset, NULL);
-	if (!re_commit_id) {
-		fprintf(stderr, "pcre regex for sha pattern is not created.\n");
-		goto exit;
-	}
-	match_commit = pcre2_match_data_create_from_pattern(re_commit_id, NULL);
-
-	ret = pcre2_match(re_upstream, (PCRE2_SPTR8)message, strlen(message), 0, 0, match_upstream, NULL);
-	if (ret > 0) {
-		// match worked!
-		PCRE2_SIZE *ovector;
-
-		ovector = pcre2_get_ovector_pointer(match_upstream);
-		for (int i = 0; i < ret; ++i) {
-			PCRE2_SPTR substring_start = (PCRE2_SPTR8)message + ovector[2*i];
-			size_t substring_length = ovector[2*i+1] - ovector[2*i];
-			//printf("	%2d: %.*s\n", i, (int)substring_length, (char *)substring_start);
-
-			// Now do the second search of the line for the sha
-			int ret2 = pcre2_match(re_commit_id, substring_start, substring_length, 0, 0, match_commit, NULL);
-			if (ret2 > 0) {
-				// match found something!
-				PCRE2_SIZE *ovector2;
-
-				ovector2 = pcre2_get_ovector_pointer(match_commit);
-				for (int j = 0; j < ret2; ++j) {
-					PCRE2_SPTR substring_start2 = (PCRE2_SPTR8)substring_start + ovector2[2*i];
-					size_t substring_length2 = ovector2[2*i+1] - ovector2[2*i];
-					//printf("	%2d: %.*s\n", i, (int)substring_length2, (char *)substring_start2);
-					upstream = malloc(substring_length2 + 1);
-					memcpy(upstream, substring_start2, substring_length2);
-					upstream[substring_length2] = 0x00;
-				}
-			}
-		}
-	}
-
-	pcre2_match_data_free(match_upstream);
-	pcre2_code_free(re_commit_id);
-	pcre2_code_free(re_upstream);
-exit:
-	return upstream;
+	return NULL;
 }
 
-// Copy of find_mainline up above, make this better someday...
 static char *find_reverts(const char *message)
 {
 	int ret;
