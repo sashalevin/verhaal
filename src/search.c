@@ -22,7 +22,7 @@
 // the caller.  If the pattern is not found, NULL is returned.
 //
 // Surely there's a simpler way to do this, it just feels so "clunky"...
-char *search_string(const char *pattern, const char *string)
+char *search_string(const char *string, const char *pattern)
 {
 	int ret;
 	char *match= NULL;
