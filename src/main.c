@@ -240,87 +240,56 @@ static bool is_valid_release(const char *version)
 	return true;
 }
 
+static char *find_sha1_full(const char *string)
+{
+	return search_string(string, "[a-f0-9]{40,}");
+}
+
+static char *find_sha1_short(const char *string)
+{
+	// At least 10 characters long, we might miss some odd ones, but
+	// it's a good start as they _should_ all be at least 12 long.
+	return search_string(string, "[a-f0-9]{10,}");
+}
+
 static char *find_upstream(const char *message)
 {
 	char *upstream;
 	char *sha1;
 
 	upstream = search_string(message, ".*upstream.*\n?");
+	if (!upstream)
+		return NULL;
 
-	if (upstream) {
-		sha1 = search_string(upstream, "[a-f0-9]{40,}");
-		free(upstream);
-		return sha1;
-	}
-	return NULL;
+	sha1 = find_sha1_full(upstream);
+	free(upstream);
+	return sha1;
 }
 
 static char *find_reverts(const char *message)
 {
-	int ret;
-	char *upstream = NULL;
-	pcre2_code *re_upstream;
-	pcre2_code *re_commit_id;
-	int errornumber;
-	pcre2_match_data *match_upstream;
-	pcre2_match_data *match_commit;
-	PCRE2_SIZE erroroffset;
-	PCRE2_SPTR upstream_pattern = (PCRE2_SPTR8)".*reverts.*\n?";
-	PCRE2_SPTR sha_pattern = (PCRE2_SPTR8)"[a-f0-9]{40,}";
+	char *reverts;
+	char *sha1;
 
-	// initialize our regular expression to find the upstream commit id
-	re_upstream = pcre2_compile(upstream_pattern, PCRE2_ZERO_TERMINATED,
-				    PCRE2_CASELESS, &errornumber, &erroroffset, NULL);
-	if (!re_upstream) {
-		fprintf(stderr, "pcre regex for upstream is not created.\n");
-		goto exit;
-	}
-	match_upstream = pcre2_match_data_create_from_pattern(re_upstream, NULL);
+	reverts = search_string(message, ".*reverts.*\n?");
+	if (!reverts)
+		return NULL;
+	sha1 = find_sha1_full(reverts);
+	free(reverts);
+	return sha1;
+}
 
-	re_commit_id = pcre2_compile(sha_pattern, PCRE2_ZERO_TERMINATED,
-				     PCRE2_CASELESS, &errornumber, &erroroffset, NULL);
-	if (!re_commit_id) {
-		fprintf(stderr, "pcre regex for sha pattern is not created.\n");
-		goto exit;
-	}
-	match_commit = pcre2_match_data_create_from_pattern(re_commit_id, NULL);
+static char *find_fix_short(const char *message)
+{
+	char *fix;
+	char *sha1;
 
-	ret = pcre2_match(re_upstream, (PCRE2_SPTR8)message, strlen(message), 0, 0, match_upstream, NULL);
-	if (ret > 0) {
-		// match worked!
-		PCRE2_SIZE *ovector;
-
-		ovector = pcre2_get_ovector_pointer(match_upstream);
-		for (int i = 0; i < ret; ++i) {
-			PCRE2_SPTR substring_start = (PCRE2_SPTR8)message + ovector[2*i];
-			size_t substring_length = ovector[2*i+1] - ovector[2*i];
-			//printf("	%2d: %.*s\n", i, (int)substring_length, (char *)substring_start);
-
-			// Now do the second search of the line for the sha
-			int ret2 = pcre2_match(re_commit_id, substring_start, substring_length, 0, 0, match_commit, NULL);
-			if (ret2 > 0) {
-				// match found something!
-				PCRE2_SIZE *ovector2;
-
-				ovector2 = pcre2_get_ovector_pointer(match_commit);
-				for (int j = 0; j < ret2; ++j) {
-					PCRE2_SPTR substring_start2 = (PCRE2_SPTR8)substring_start + ovector2[2*i];
-					size_t substring_length2 = ovector2[2*i+1] - ovector2[2*i];
-					//printf("	%2d: %.*s\n", i, (int)substring_length2, (char *)substring_start2);
-					upstream = malloc(substring_length2 + 1);
-					memcpy(upstream, substring_start2, substring_length2);
-					upstream[substring_length2] = 0x00;
-				}
-			}
-		}
-	}
-
-	pcre2_match_data_free(match_upstream);
-	pcre2_match_data_free(match_commit);
-	pcre2_code_free(re_commit_id);
-	pcre2_code_free(re_upstream);
-exit:
-	return upstream;
+	fix = search_string(message, ".*fixes:.*\n?");
+	if (!fix)
+		return NULL;
+	sha1 = find_sha1_short(fix);
+	free(fix);
+	return sha1;
 }
 
 // Turn a "short" Fixes SHA1 into a "full" SHA1 if it is present in the git tree
@@ -374,7 +343,6 @@ static char *find_fix(const char *line)
 	pcre2_match_data *match_commit;
 	PCRE2_SIZE erroroffset;
 	PCRE2_SPTR fixes_pattern = (PCRE2_SPTR8)".*fixes:.*\n?";
-	//PCRE2_SPTR sha_pattern = (PCRE2_SPTR8)"[a-f0-9]{40,}";
 	PCRE2_SPTR sha_pattern = (PCRE2_SPTR8)"[a-f0-9]{10,}";	// At least 10 characters long, we
 								// might miss some odd ones, but
 								// it's a good start as they
