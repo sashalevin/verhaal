@@ -282,7 +282,8 @@ static char *find_fix(const char *line)
 	char *fix;
 	char *sha1;
 
-	fix = search_string(line, ".*fixes:.*\n?");
+	//fix = search_string(line, ".*fixes:.*\n?");
+	fix = search_string(line, "fixes:.*\n?");
 	if (!fix)
 		return NULL;
 	sha1 = find_sha1_short(fix);
@@ -291,7 +292,7 @@ static char *find_fix(const char *line)
 }
 
 // Turn a "short" Fixes SHA1 into a "full" SHA1 if it is present in the git tree
-static char *fixes_expand(char *fix)
+static char *fixes_expand(char *fix, const char *line)
 {
 	git_revspec revspec;
 	const git_oid *oid;
@@ -302,7 +303,13 @@ static char *fixes_expand(char *fix)
 	if (ret) {
 		// fix was not present!
 		// FIXME for now just return the string given to us, we'll fix this later...
-		//printf("%s is NOT a valid fix in the kernel tree, please fix...\n", fix);
+		//fprintf(stderr, "Invalid fix line: '%s' '%s'", fix, line);
+		//fprintf(stderr, "%s is NOT a valid fix in the kernel tree, please fix...\n", fix);
+
+		// Dig out the SHA1: ("foo") type info so we can look them up elsewhere
+		char *temp = search_string(line, "[a-f0-9]{10,}.*");
+		//fprintf(stderr, "%s\n", temp);
+		free(temp);
 		return fix;
 	}
 
@@ -349,7 +356,7 @@ static char *find_fixes(const char *message)
 		char *f = find_fix(line);
 		if (f) {
 			// turn this into a fully-formed SHA1, not just an abbreviated one
-			f = fixes_expand(f);
+			f = fixes_expand(f, line);
 			if (strlen(final) == 0)
 				snprintf(temp, 1024, "%s", f);
 			else
