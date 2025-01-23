@@ -43,6 +43,8 @@ static char *git_repo_location;
 static char *database_name;
 static const char *database_name_default = "commits.db";
 
+static bool fixes_print = false;
+
 // We have a PRIMARY KEY although it is probably not needed because git ensures us of this anyway...
 static const char *db_create_sql =	"CREATE TABLE IF NOT EXISTS commits "	\
 					"(id TEXT PRIMARY KEY NOT NULL, "	\
@@ -282,7 +284,6 @@ static char *find_fix(const char *line)
 	char *fix;
 	char *sha1;
 
-	//fix = search_string(line, ".*fixes:.*\n?");
 	fix = search_string(line, "fixes:.*\n?");
 	if (!fix)
 		return NULL;
@@ -306,10 +307,12 @@ static char *fixes_expand(char *fix, const char *line)
 		//fprintf(stderr, "Invalid fix line: '%s' '%s'", fix, line);
 		//fprintf(stderr, "%s is NOT a valid fix in the kernel tree, please fix...\n", fix);
 
-		// Dig out the SHA1: ("foo") type info so we can look them up elsewhere
-		char *temp = search_string(line, "[a-f0-9]{10,}.*");
-		//fprintf(stderr, "%s\n", temp);
-		free(temp);
+		if (fixes_print) {
+			// Dig out the SHA1: ("foo") type info so we can look them up elsewhere
+			char *temp = search_string(line, "[a-f0-9]{10,}.*");
+			fprintf(stderr, "%s\n", temp);
+			free(temp);
+		}
 		return fix;
 	}
 
@@ -715,7 +718,7 @@ static void loop_through_2(void)
 	}
 }
 
-static const char *short_options = "Vvhd:";
+static const char *short_options = "Vvhfd:";
 
 static const struct option long_options[] = {
 	{
@@ -737,6 +740,12 @@ static const struct option long_options[] = {
 		.flag =		NULL,
 	},
 	{
+		.val =		'f',
+		.name =		"fixes",
+		.has_arg =	no_argument,
+		.flag =		NULL,
+	},
+	{
 		.val =		'd',
 		.name =		"database",
 		.has_arg =	required_argument,
@@ -751,6 +760,7 @@ static void help(void)
 	fprintf(stdout, "  commits as they are made across multiple branches.\n\n");
 	fprintf(stdout, "  Valid options:\n");
 	fprintf(stdout, "	--help  -h	This message\n");
+	fprintf(stdout, "	--fixes -f	Any invalid \"Fixes:\" lines will get written to stderr\n");
 	fprintf(stdout, "	--verbose -V	Turn debugging messages on (warning, lots of junk here)\n");
 	fprintf(stdout, "	--version -v	Print the version of the program and exit\n");
 	fprintf(stdout, "	--database=	Change the default database name from '%s' to the provided one\n",
@@ -779,6 +789,10 @@ static int get_options(int argc, char *argv[])
 
 		case 'v':
 			exit(0);
+
+		case 'f':
+			fixes_print = true;
+			break;
 
 		case 'd':
 			database_name = strdup(optarg);
