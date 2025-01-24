@@ -1,0 +1,84 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Copyright 2018-2020,2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+#
+# Given a git commit id, find the release(s) it was found in
+
+# This is the version that requires a sql database to be present, we don't rely
+# on the filesystem to be set up like the "other" version of this script does.
+#
+# NOTE: does NOT search the queues, so watch out for that.  If you want that,
+# it should be added as either an option, or use the "other" script.
+
+# Initialize our color variables if we are a normal terminal
+if [[ -t 1 ]]; then
+	txtred=$(tput setaf 1)  # Red
+	txtgrn=$(tput setaf 2)  # Green
+	txtblu=$(tput setaf 4)  # Blue
+	txtcyn=$(tput setaf 6)  # Cyan
+	txtrst=$(tput sgr0)     # Text reset
+else
+	txtred=""
+	txtgrn=""
+	txtblu=""
+	txtcyn=""
+	txtrst=""
+fi
+
+REAL_SCRIPT=$(realpath -e "${BASH_SOURCE[0]}")
+SCRIPT_TOP="${SCRIPT_TOP:-$(dirname "${REAL_SCRIPT}")}"
+
+#source "${SCRIPT_TOP}"/lib/common
+
+# Location of our database.  Should be initialized already.
+DB="${SCRIPT_TOP}"/commits.db
+
+# Location of the stable kernel tree, to cannonize the git id and verify it is
+# a valid one to start with
+GIT_TREE=${CVEKERNELTREE}
+if [[ "${GIT_TREE}" == "" ]]; then
+	echo "${txtred}Error: must provide ${txtcyn}CVEKERNELTREE${txtrst} environment variable to point to a kernel tree."
+	exit 1
+fi
+
+
+test_id=$1
+if [ "${test_id}" == "" ] ; then
+        echo "$0 ID_TO_FIND"
+        exit 1
+fi
+
+id=$(cd ${GIT_TREE} && git log -1 --format="%H" ${test_id} 2> /dev/null)
+if [[ "${id}" == "" ]]; then
+	echo "${txtred}Error:${txtrst} ${txtcyn}${test_id}${txtrst} is not found in the kernel tree."
+	exit 1
+fi
+
+# Array of releases we find
+output=()
+
+# Find all stable branches first
+stable_commits=$(sqlite3 ${DB} "SELECT id FROM commits WHERE mainline_id='${id}';")
+for sc in ${stable_commits}; do
+	# Check for a revert before adding it to our list
+	#echo "sc='${sc}'"
+	revert=$(sqlite3 ${DB} "SELECT id from commits WHERE reverts='${sc}';")
+	if [[ "${revert}" != "" ]]; then
+		#echo "	commit ${sc} is reverted by ${revert} so skipping"
+		continue
+	fi
+	# Get the release for this commit
+	version=$(sqlite3 ${DB} "SELECT release FROM commits WHERE id='${sc}';")
+	output+=("${version}:${sc}")
+done
+
+# Check mainline
+version=$(sqlite3 ${DB} "SELECT release from commits where id='${id}';")
+if [[ "${version}" != "" ]]; then
+	output+=("${version}:${id}")
+fi
+
+# print them out, in sorted order
+echo "$(for release in "${output[@]}"; do echo "${release}"; done | sort -V)"
+
