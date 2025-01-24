@@ -32,7 +32,7 @@ SCRIPT_TOP="${SCRIPT_TOP:-$(dirname "${REAL_SCRIPT}")}"
 #source "${SCRIPT_TOP}"/lib/common
 
 # Location of our database.  Should be initialized already.
-DB="${SCRIPT_TOP}"/commits.db
+DB="${SCRIPT_TOP}"/verhaal.db
 
 # Location of the stable kernel tree, to cannonize the git id and verify it is
 # a valid one to start with

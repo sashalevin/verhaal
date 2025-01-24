@@ -42,7 +42,7 @@ To build the initial database, run
 
 by default, the location of the Linux kernel tree will be sourced from the
 `CVEKERNELTREE` environment variable and the database output will be written to
-a `commits.db` file.  To override these, either use a command line option, or
+a `verhaal.db` file.  To override these, either use a command line option, or
 change the environment variable.
 
 After the database has been created, the script

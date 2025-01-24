@@ -68,6 +68,7 @@ add_project_arguments(
 config = configuration_data()
 config.set_quoted('PACKAGE_NAME', meson.project_name())
 config.set_quoted('VERSION', meson.project_version())
+config.set_quoted('DATABASE_NAME', 'verhaal.db')
 config_h = configure_file(output: 'config.h', configuration: config)
 
 add_project_arguments('-include', 'config.h', language : 'c')

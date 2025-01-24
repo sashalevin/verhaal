@@ -41,7 +41,7 @@ struct commit {
 static git_repository *git_repo;
 static char *git_repo_location;
 static char *database_name;
-static const char *database_name_default = "commits.db";
+static const char *database_name_default = DATABASE_NAME;
 
 static bool fixes_print = false;
 

@@ -17,7 +17,7 @@ SCRIPT_TOP="${SCRIPT_TOP:-$(dirname "${REAL_SCRIPT}")}"
 #source "${SCRIPT_TOP}"/lib/common
 
 # Location of our database.  Should be initialized already.
-DB="${SCRIPT_TOP}"/commits.db
+DB="${SCRIPT_TOP}"/verhaal.db
 
 # Location of the "latest" git tree for when patches are not found in the
 # stable tree at the moment.  This is the "fall-back" that we can use the
