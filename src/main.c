@@ -49,6 +49,7 @@ static bool fixes_print = false;
 static const char *db_create_sql =	"CREATE TABLE IF NOT EXISTS commits "	\
 					"(id TEXT PRIMARY KEY NOT NULL, "	\
 					" release TEXT NOT NULL, "		\
+					" mainline INTEGER,"			\
 					" mainline_id TEXT,"			\
 					" reverts TEXT,"			\
 					" fixes TEXT);";
@@ -99,7 +100,7 @@ static int db_init(void)
 
 	// Stick in the "first" commit as we have to do it by hand for some reason (git doesn't like
 	// showing it for us...)
-	const char *db_initial_commit_sql = "INSERT INTO commits (id, release) VALUES ('1da177e4c3f41524e886b7f1b8a0c1fc7321cac2', '2.6.12');";
+	const char *db_initial_commit_sql = "INSERT INTO commits (id, release, mainline) VALUES ('1da177e4c3f41524e886b7f1b8a0c1fc7321cac2', '2.6.12', 1);";
 	ret = sqlite3_exec(database, db_initial_commit_sql, 0, 0, &error);
 	if (ret != SQLITE_OK) {
 		fprintf(stderr, "Error adding initial commit in database %s %s\n",
@@ -382,7 +383,7 @@ static char *find_fixes(const char *message)
 	return final;
 }
 
-static const char *db_insert_sql = "INSERT INTO commits (id, release, mainline_id, reverts, fixes) VALUES (?, ?, ?, ?, ?);";
+static const char *db_insert_sql = "INSERT INTO commits (id, release, mainline, mainline_id, reverts, fixes) VALUES (?, ?, ?, ?, ?, ?);";
 
 static int create_kernel_range(const char *start, const char *end, bool minor)
 {
@@ -393,8 +394,15 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 	git_oid oid;
 	git_revwalk *walker;
 	int ret;
+	int mainline;
 
-	dbg("%s: start=%s, end=%s, minor=%d\n", __func__, start, end, minor);
+	// Set "is this mainline or not" flag to be stored later
+	if (minor)
+		mainline = 0;
+	else
+		mainline = 1;
+
+	dbg("%s: start=%s, end=%s, mainline=%d\n", __func__, start, end, mainline);
 
 	// Let's first see if these are a few "known" ranges that we know we can
 	// never find, thanks to the start of the git repo and how the first few
@@ -488,14 +496,16 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 		}
 		sqlite3_bind_text(sql_stmt, 1, sha, strlen(sha), NULL);
 		sqlite3_bind_text(sql_stmt, 2, end, strlen(end), NULL);
+		sqlite3_bind_int(sql_stmt, 3, mainline);
+
 		if (upstream)
-			sqlite3_bind_text(sql_stmt, 3, upstream, strlen(upstream), NULL);
+			sqlite3_bind_text(sql_stmt, 4, upstream, strlen(upstream), NULL);
 
 		if (reverts)
-			sqlite3_bind_text(sql_stmt, 4, reverts, strlen(reverts), NULL);
+			sqlite3_bind_text(sql_stmt, 5, reverts, strlen(reverts), NULL);
 
 		if (fixes)
-			sqlite3_bind_text(sql_stmt, 5, fixes, strlen(fixes), NULL);
+			sqlite3_bind_text(sql_stmt, 6, fixes, strlen(fixes), NULL);
 
 		ret = sqlite3_step(sql_stmt);
 		if (ret != SQLITE_DONE)
