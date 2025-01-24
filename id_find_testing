@@ -1,15 +1,51 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0-only
 #
-# Copyright 2018-2020,2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+# Copyright 2018-2020 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+# Copyright 2024-2025 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 #
-# Given a git commit id, find the release(s) it was found in
-
-# This is the version that requires a sql database to be present, we don't rely
-# on the filesystem to be set up like the "other" version of this script does.
+# Given a git commit id, find the release(s) it was found in and the git ids
+# they are in those releases.
 #
-# NOTE: does NOT search the queues, so watch out for that.  If you want that,
-# it should be added as either an option, or use the "other" script.
+# The output of this is:
+#   VERSION:GIT_ID
+# and the output is sorted in version order (according to 'sort -V')
+#
+# This script is to be used with 'dyad' in trying to find the proper kernel
+# releases where a commit ends up in.  Because of that, reverts MUST be taken
+# into account.
+#
+# If a commit is in a release, and reverted in that release, then it will NOT
+# show up in this list as officially this branch did not ever contain the
+# release.  Also, if a revert for a commit happens in in an older release, then
+# the release is not listed as only the most recent state should be accounted
+# for.  If a commit is in a branch, and then later is reverted, it is not
+# recorded at ALL for that branch, as essencially it is not present there at
+# all.
+#
+# For example, look at commit c45beebfde34 ("ovl: support encoding fid from
+# inode with no alias")
+# This commit was released in 6.13, with that commit id, so that will show up
+# in the output.
+#
+# It was also backported to the 6.6.y and 6.12.y branches:
+#   For 6.12.y it showed up as commit id 3c7c90274ae339e1ad443c9be1c67a20b80b9c76
+#
+#   For 6.6.y it is more complex.  It was originally applied to release 6.6.72
+#   as commit id a1a541fbfa7e97c1100144db34b57553d7164ce5.  But that backport
+#   turned out to have problems as other changes around it were not properly
+#   backported, so it was reverted in commit 6.6.73 as commit id
+#   950b604384fd75d62e860bec7135b2b62eb4d508.  And then, in 6.6.74 it was
+#   brought back as commit id f0c0ac84de17c37e6e84da65fb920f91dada55ad.
+#   Because of this, we ONLY want to count the 6.6.y branch as the last commit
+#   that it showed up, which is 6.6.74.
+#
+# So the output of this script, for commit c45beebfde34 will be:
+#	6.6.74:f0c0ac84de17c37e6e84da65fb920f91dada55ad
+#	6.12.10:3c7c90274ae339e1ad443c9be1c67a20b80b9c76
+#	6.13:c45beebfde34aa71afbc48b2c54cdda623515037
+#
+#
 
 # Initialize our color variables if we are a normal terminal
 if [[ -t 1 ]]; then
@@ -25,6 +61,14 @@ else
 	txtcyn=""
 	txtrst=""
 fi
+
+DEBUG=0
+dbg()
+{
+	if [[ ${DEBUG} -ge 1 ]] ; then
+		echo "${txtcyn}# ${1}${txtrst}"
+	fi
+}
 
 REAL_SCRIPT=$(realpath -e "${BASH_SOURCE[0]}")
 SCRIPT_TOP="${SCRIPT_TOP:-$(dirname "${REAL_SCRIPT}")}"
@@ -42,6 +86,10 @@ if [[ "${GIT_TREE}" == "" ]]; then
 	exit 1
 fi
 
+if [[ "${1}" == "-v" ]]; then
+	DEBUG=1
+	shift
+fi
 
 test_id=$1
 if [ "${test_id}" == "" ] ; then
@@ -62,10 +110,10 @@ output=()
 stable_commits=$(sqlite3 ${DB} "SELECT id FROM commits WHERE mainline_id='${id}';")
 for sc in ${stable_commits}; do
 	# Check for a revert before adding it to our list
-	#echo "sc='${sc}'"
+	dbg "stable_commit='${sc}'"
 	revert=$(sqlite3 ${DB} "SELECT id from commits WHERE reverts='${sc}';")
 	if [[ "${revert}" != "" ]]; then
-		#echo "	commit ${sc} is reverted by ${revert} so skipping"
+		dbg "	commit ${sc} is reverted by ${revert} so skipping"
 		continue
 	fi
 
@@ -77,19 +125,21 @@ for sc in ${stable_commits}; do
 		# this is just a backport of an upstream revert).
 		mainline=$(sqlite3 ${DB} "SELECT mainline FROM commits WHERE id='${revert}';")
 		if [[ "${mainline}" == "0" ]]; then
-			#echo "	commit ${sc} reverts the stable commit ${revert} so skip"
+			dbg "	commit ${sc} reverts the stable commit ${revert} so skip"
 			continue
 		fi
 	fi
 
 	# Get the release for this commit
 	version=$(sqlite3 ${DB} "SELECT release FROM commits WHERE id='${sc}';")
+	dbg "	commit ${sc} is in version ${version}"
 	output+=("${version}:${sc}")
 done
 
 # Check mainline
 version=$(sqlite3 ${DB} "SELECT release from commits where id='${id}';")
 if [[ "${version}" != "" ]]; then
+	dbg "commit ${id} is in mainline release ${version}"
 	output+=("${version}:${id}")
 fi
 
