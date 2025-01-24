@@ -463,6 +463,15 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 		if (reverts)
 			dbg("	reverts=%s\n", reverts);
 
+		// If we have a reverts flag, we do NOT want to set the upstream commit id as odds
+		// are we just caught the "This is commit XXX which is commit YYY upstream" text so
+		// just zap out the upstream field.  This lets us later properly query when things
+		// are reverted as well as not incorrectly mark reverts as commits.
+		if (reverts && upstream) {
+			free(upstream);
+			upstream = NULL;
+		}
+
 		// Find if this commit fixes anything
 		fixes = find_fixes(message);
 		if (fixes)
