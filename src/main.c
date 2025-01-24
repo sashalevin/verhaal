@@ -46,13 +46,17 @@ static const char *database_name_default = DATABASE_NAME;
 static bool fixes_print = false;
 
 // We have a PRIMARY KEY although it is probably not needed because git ensures us of this anyway...
-static const char *db_create_sql =	"CREATE TABLE IF NOT EXISTS commits "	\
-					"(id TEXT PRIMARY KEY NOT NULL, "	\
-					" release TEXT NOT NULL, "		\
-					" mainline INTEGER,"			\
-					" mainline_id TEXT,"			\
-					" reverts TEXT,"			\
-					" fixes TEXT);";
+static const char *db_create_commits_sql =	"CREATE TABLE IF NOT EXISTS commits "	\
+						"(id TEXT PRIMARY KEY NOT NULL, "	\
+						" release TEXT NOT NULL, "		\
+						" mainline INTEGER,"			\
+						" mainline_id TEXT,"			\
+						" reverts TEXT,"			\
+						" fixes TEXT);";
+
+static const char *db_create_releases_sql =	"CREATE TABLE IF NOT EXISTS releases "	\
+						"(release TEXT PRIMARY KEY NOT NULL, "	\
+						"mainline INTEGER);";
 
 static struct sqlite3 *database;
 
@@ -89,7 +93,7 @@ static int db_init(void)
 	}
 
 	/* Create the tables if it's not been initialized yet */
-	ret = sqlite3_exec(database, db_create_sql, 0, 0, &error);
+	ret = sqlite3_exec(database, db_create_commits_sql, 0, 0, &error);
 	if (ret != SQLITE_OK) {
 		fprintf(stderr, "Error creating database %s %s\n",
 			database_name, error);
@@ -111,6 +115,63 @@ static int db_init(void)
 	}
 
 	sqlite3_free(error);
+	return ret;
+}
+
+static int db_releases_init(void)
+{
+	char *error;
+	int ret;
+
+	/* Create the releases table */
+	ret = sqlite3_exec(database, db_create_releases_sql, 0, 0, &error);
+	if (ret != SQLITE_OK) {
+		fprintf(stderr, "Error creating database %s %s\n",
+			database_name, error);
+		sqlite3_free(error);
+		sqlite3_close(database);
+		return ret;
+	}
+
+	// Stick in the "first" commit as we have to do it by hand for some reason (git doesn't like
+	// showing it for us...)
+	const char *db_initial_release_sql = "INSERT INTO releases (release, mainline) VALUES ('2.6.12', 1);";
+	ret = sqlite3_exec(database, db_initial_release_sql, 0, 0, &error);
+	if (ret != SQLITE_OK) {
+		fprintf(stderr, "Error adding initial commit in database %s %s\n",
+			database_name, error);
+		sqlite3_free(error);
+		sqlite3_close(database);
+		return ret;
+	}
+
+	sqlite3_free(error);
+	return ret;
+}
+
+static const char *db_insert_release_sql = "INSERT INTO releases (release, mainline) VALUES (?, ?);";
+static int db_release_add(const char *release, int mainline)
+{
+	sqlite3_stmt *sql_stmt = NULL;
+	int ret;
+
+	dbg("%s: %10s mainline=%d\n", __func__, release, mainline);
+
+	ret = sqlite3_prepare(database, db_insert_release_sql, -1, &sql_stmt, NULL);
+	if (ret) {
+		fprintf(stderr, "Error preparing release sql statement %s\n",
+			sqlite3_errmsg(database));
+		return ret;
+	}
+	sqlite3_bind_text(sql_stmt, 1, release, strlen(release), NULL);
+	sqlite3_bind_int(sql_stmt, 2, mainline);
+
+	ret = sqlite3_step(sql_stmt);
+	if (ret != SQLITE_DONE)
+		fprintf(stderr, "Error inserting release %s row %s\n", release, sqlite3_errmsg(database));
+
+	ret = sqlite3_finalize(sql_stmt);
+
 	return ret;
 }
 
@@ -440,6 +501,8 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 			 TERMINAL_FG_BLUE "v%s" TERMINAL_FG_DEFAULT "" TERMINAL_CLEAR_RIGHT, start, end);
 	fflush(stdout);
 
+	db_release_add(end, mainline);
+
 	while (!git_revwalk_next(&oid, walker)) {
 		char sha[256];
 		sqlite3_stmt *sql_stmt = NULL;
@@ -500,7 +563,7 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 
 		ret = sqlite3_step(sql_stmt);
 		if (ret != SQLITE_DONE)
-			fprintf(stderr, "Error inserting row %s\n", sqlite3_errmsg(database));
+			fprintf(stderr, "Error inserting commit %s row %s\n", sha, sqlite3_errmsg(database));
 
 		ret = sqlite3_finalize(sql_stmt);
 		if (upstream)
@@ -838,6 +901,9 @@ int main(int argc, char *argv[])
 			 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT "'\n", database_name);
 
 	ret = db_init();
+	if (ret)
+		goto exit;
+	ret = db_releases_init();
 	if (ret)
 		goto exit;
 
