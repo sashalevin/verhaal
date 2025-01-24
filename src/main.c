@@ -702,6 +702,10 @@ static void loop_through_2(void)
 			continue;
 		}
 
+		snprintf(range1, sizeof(range1), "2.6.%d", x - 1);
+		snprintf(range2, sizeof(range2), "2.6.%d", x);
+		create_kernel_range_major(range1, range2);
+
 		for (int y = 1; y < 101; ++y) {
 			snprintf(str, sizeof(str), "v2.6.%d.%d", x, y);
 			if (!is_valid_release(str)) {
@@ -720,10 +724,6 @@ static void loop_through_2(void)
 			}
 			create_kernel_range_minor(range1, range2);
 		}
-
-		snprintf(range1, sizeof(range1), "2.6.%d", x - 1);
-		snprintf(range2, sizeof(range2), "2.6.%d", x);
-		create_kernel_range_major(range1, range2);
 	}
 }
 
