@@ -81,6 +81,7 @@ verhaal_sources = [
   'src/search.c',
   'src/terminal.c',
   'src/time.c',
+  'src/versions.c',
 ]
 
 libsqlite3  = dependency('sqlite3', version: '>= 3.45')
