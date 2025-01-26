@@ -38,7 +38,7 @@ struct commit {
 	char *fixes;
 };
 
-static git_repository *git_repo;
+git_repository *git_repo;
 static char *git_repo_location;
 static char *database_name;
 static const char *database_name_default = DATABASE_NAME;
@@ -62,7 +62,7 @@ static struct sqlite3 *database;
 
 // Dumb "only print stuff when greg is debugging the code" function
 static bool debug = false;
-__attribute__((__format__(printf, 1, 2))) static int dbg(const char *fmt, ...)
+__attribute__((__format__(printf, 1, 2))) int dbg(const char *fmt, ...)
 {
 	va_list args;
 	int ret;
@@ -910,6 +910,8 @@ int main(int argc, char *argv[])
 	ret = git_init();
 	if (ret)
 		goto exit;
+
+	versions_create();
 
 	loop_through_2();
 	loop_through_x(3);
