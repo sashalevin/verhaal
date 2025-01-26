@@ -931,9 +931,13 @@ int main(int argc, char *argv[])
 
 	terminal_fprintf(stdout, "\n");
 
+	struct vh_timestamp *foo = time_start("git_shutdown");
 	git_shutdown();
+	time_stop(foo);
 
+	foo = time_start("Write data to disk");
 	db_write_to_disk();
+	time_stop(foo);
 
 exit:
 	free(database_name);
