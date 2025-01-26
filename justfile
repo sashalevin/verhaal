@@ -20,6 +20,12 @@ _help:
 @lint:
 	reuse --root . lint
 
+
 # Build the source, setting up things if not present
-@build:
+@make:
 	./autogen.sh
+
+
+# Build the database, using the defaults
+@build_db:
+	./build/verhaal
