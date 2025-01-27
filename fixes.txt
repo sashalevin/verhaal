@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: GPL-2.0-only
+# Copyright (c) 2025 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+#
+# List of fixed up "Fixes:" entries from the git log
+# Format is "invalid fix" "proper id"
+005887f2e3e0 ad7b0368f33cffe67fecd302028915926e50ef7e
+0060c68159fc dbbfca9f41e86903501dded3fd494e1a56f3c310
+008afb9f3d57 7e7efdda6adb385fbdfd6f819d76bc68c923c394
+00aa975bd031 47f9c279689107f306fff506753971a39a8a7ffc
+01b0ac07589e eee87e4377a4b86dc2eea0ade162b0dc33f40576
+01b988a708af 4bfa47f3174155d4da088c5259e5fe2fcac01cf4
+024ad8df763f 331dc0bc195bb77fcbe60b4513464b406a6d20cb
