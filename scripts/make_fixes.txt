@@ -1,0 +1,34 @@
+<!---
+SPDX-License-Identifier: GPL-2.0-only
+Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+-->
+
+Making the fixes.txt file:
+
+Run verhaal with the -f file and pipe stderr to a file:
+	verhaal -f 2> invalid_fixes
+
+Sort it and uniq it.
+
+
+Then strip the ( ) from the lines:
+	sed 's/(//g' | sed 's/)//g'
+
+Then pass it all through git-disambiguate.sh:
+
+	#!/bin/bash
+	while IFS= read -r line; do
+		sha=$(echo "${line}" | cut -f 1 -d ' ')
+	#	echo "sha='${sha}' line='${line}'"
+		cmd="./git-disambiguate.sh --force ${line}"
+	#	echo "cmd='${cmd}'"
+		good=$(${cmd})
+		if [[ "${good}" == "" ]]; then
+			good="NOT_VALID"
+		fi
+		echo "${sha} ${good}"
+	done < "x"
+
+	./do | tee > fixes.txt
+
+
