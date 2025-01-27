@@ -78,6 +78,7 @@ add_project_arguments('-include', 'config.h', language : 'c')
 ##########################
 verhaal_sources = [
   'src/db.c',
+  'src/fixes.c',
   'src/main.c',
   'src/search.c',
   'src/terminal.c',

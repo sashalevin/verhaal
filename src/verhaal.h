@@ -28,6 +28,10 @@ void time_stop(struct vh_timestamp *time);
 // versions.c
 void versions_create(void);
 
+// fixes.c
+void fixes_init(void);
+char *fix_translate(const char *fix);
+
 // main.c
 extern git_repository *git_repo;
 __attribute__((__format__(printf, 1, 2))) int dbg(const char *fmt, ...);

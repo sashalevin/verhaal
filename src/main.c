@@ -157,8 +157,14 @@ static char *fixes_expand(char *fix, const char *line)
 	int ret = git_revparse(&revspec, git_repo, fix);
 
 	if (ret) {
-		// fix was not present!
-		// FIXME for now just return the string given to us, we'll fix this later...
+		// Fix sha was not in the git tree, see if it is in our table of "fixup" sha values:
+		char *translate_sha = fix_translate(fix);
+		if (translate_sha != NULL)
+			return translate_sha;
+
+		// Fix was not in the translate list, so just return the string given to us after
+		// potentially logging it to stderr if that option was enabled by the user
+
 		//fprintf(stderr, "Invalid fix line: '%s' '%s'", fix, line);
 		//fprintf(stderr, "%s is NOT a valid fix in the kernel tree, please fix...\n", fix);
 
@@ -683,6 +689,8 @@ int main(int argc, char *argv[])
 		goto exit;
 
 	versions_create();
+
+	fixes_init();
 
 	loop_through_2();
 	loop_through_x(3);
