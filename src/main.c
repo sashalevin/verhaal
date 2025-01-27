@@ -23,7 +23,6 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <getopt.h>
-//#include <sqlite3.h>
 #include <git2.h>
 #include "ccan/list/list.h"
 
