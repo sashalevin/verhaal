@@ -133,24 +133,12 @@ static int db_releases_init(void)
 		return ret;
 	}
 
-	// Stick in the "first" commit as we have to do it by hand for some reason (git doesn't like
-	// showing it for us...)
-	const char *db_initial_release_sql = "INSERT INTO releases (release, mainline) VALUES ('2.6.12', 1);";
-	ret = sqlite3_exec(database, db_initial_release_sql, 0, 0, &error);
-	if (ret != SQLITE_OK) {
-		fprintf(stderr, "Error adding initial commit in database %s %s\n",
-			database_name, error);
-		sqlite3_free(error);
-		sqlite3_close(database);
-		return ret;
-	}
-
 	sqlite3_free(error);
 	return ret;
 }
 
 static const char *db_insert_release_sql = "INSERT INTO releases (release, mainline) VALUES (?, ?);";
-static int db_release_add(const char *release, int mainline)
+int db_release_add(const char *release, int mainline)
 {
 	sqlite3_stmt *sql_stmt = NULL;
 	int ret;
@@ -501,8 +489,6 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 			 TERMINAL_FG_BLUE "v%s" TERMINAL_FG_DEFAULT "" TERMINAL_CLEAR_RIGHT, start, end);
 	fflush(stdout);
 
-	db_release_add(end, mainline);
-
 	while (!git_revwalk_next(&oid, walker)) {
 		char sha[256];
 		sqlite3_stmt *sql_stmt = NULL;
@@ -684,6 +670,9 @@ static int create_kernel_range_rc(void)
 	snprintf(range2, sizeof(range2), "%d.%d-rc1", major, minor);
 	create_kernel_range_major(range1, range2);
 
+	// FIXME, should be in versions.c
+	db_release_add(range1, 1);
+
 	// Let's walk through as many -rc releases as we can think of
 	for (int i = 1; i < 12; ++i) {
 		snprintf(range1, sizeof(range1), "v%s-rc%d", &head_tag[1], i);
@@ -694,6 +683,9 @@ static int create_kernel_range_rc(void)
 		snprintf(range1, sizeof(range1), "%s-rc%d", &head_tag[1], i);
 		snprintf(range2, sizeof(range2), "%s-rc%d", &head_tag[1], i + 1);
 		create_kernel_range_major(range1, range2);
+
+		// FIXME, should be in versions.c
+		db_release_add(range1, 1);
 	}
 
 exit:

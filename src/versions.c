@@ -2,6 +2,15 @@
 //
 // Copyright (c) 2025 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 //
+// Note, this is a duplicate of the existing logic in main.c to cycle
+// through all of the versions to create the ranges.  For now, just use this
+// list to populate the database and hopefully, eventually, track what versions
+// are, and are not, in the database so we can create the "remaining ranges" to
+// build so we don't have to scan the whole world each time this program runs.
+//
+// Also, we do NOT handle the -rc calculations here, that's still in main.c.
+// Should be moved here eventually as well.
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -43,6 +52,10 @@ static void add_version(const char *version, bool mainline)
 
 	//printf("%d	%s	%d\n", max_version, version, mainline);
 	max_version++;
+
+	// Add the version to the database
+	db_release_add(version, mainline);
+
 }
 
 static void add_version_major(const char *version)
@@ -114,7 +127,9 @@ static void loop_through_x(int major)
 
 void versions_create(void)
 {
-	struct vh_timestamp *foo = time_start(__func__);
+	struct vh_timestamp *foo;
+
+	foo = time_start(__func__);
 	loop_through_2();
 	loop_through_x(3);
 	loop_through_x(4);
