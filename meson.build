@@ -77,6 +77,7 @@ add_project_arguments('-include', 'config.h', language : 'c')
 # lsusb build instructions
 ##########################
 verhaal_sources = [
+  'src/db.c',
   'src/main.c',
   'src/search.c',
   'src/terminal.c',
