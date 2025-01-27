@@ -2,11 +2,11 @@ SPDXVersion: SPDX-2.1
 DataLicense: CC0-1.0
 SPDXID: SPDXRef-DOCUMENT
 DocumentName: verhaal
-DocumentNamespace: http://spdx.org/spdxdocs/spdx-v2.1-5e7f9473-0482-40b9-b1b5-bc3ca9e3f56f
+DocumentNamespace: http://spdx.org/spdxdocs/spdx-v2.1-3387e490-e48d-4f27-97ee-0752b3ff7d58
 Creator: Person: Greg Kroah-Hartman <gregkh@linuxfoundation.org> ()
 Creator: Organization: The Linux Foundation ()
 Creator: Tool: reuse-5.0.2
-Created: 2025-01-24T15:21:03Z
+Created: 2025-01-27T08:55:00Z
 CreatorComment: <text>This document was created automatically using available reuse information consistent with REUSE.</text>
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-fe13e6ad089859a427c0269d425f03b8
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-2c3ad8b62800cdf64f0f4d877fc8fb67
@@ -18,8 +18,8 @@ Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-18b56b0139daefb6d2d1a550d5239db
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-00101cecf2e145c9860b697a0834f6c2
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-7370afc02d049a7784da27d6fc396295
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-62c2d79c064cc614e68a77c18c78d2a3
-Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-64e0d95d2d264a1f41b00250ca41c585
-Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-720ce07031388e866e87ca02b122f401
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-030f23ca5b2ae2de4ce84fe6ff31a7bb
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-ba6c0ca8fa4ecc8afd84e4d00b25f36d
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-342457f53bd0f83969b32dc34e5050e9
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-cdab48e04b16f5f649f17e7961263619
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-7470387d30327b362a27bb3f67ff89cc
@@ -27,11 +27,14 @@ Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-4da2aa0f4f62db93c43f71522f11edb
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-6ad3affa3fd156cccc32e62b5110a61f
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-017a92a09a0b999309d6ddb3cc36150b
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-bc7b940852f43d0ad441d270e7fb10a4
-Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-52b03acfba7b048d38a3b49e9e329651
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-85866b05e8c655b3d7595dca4d49af56
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-0bc1589dba3ed4255a0e22fa2ca5f2a8
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-087f2854498e16d30390e6dc6ae7e62f
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-ae79ea242349f124179f796ce270ad4d
 Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-1319680a63fee5f086c9d0ae6b443a2d
-Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-922a547c3b3024be26cbb7826494e0ef
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-f6cb525251a93edbebd9cf2ad07db358
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-4f8b826ccd45d61fe08a0bf30abbac60
+Relationship: SPDXRef-DOCUMENT DESCRIBES SPDXRef-8c18ac4241d1b624789f01169f25c093
 
 FileName: ./.editorconfig
 SPDXID: SPDXRef-fe13e6ad089859a427c0269d425f03b8
@@ -105,15 +108,15 @@ LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
 
 FileName: ./justfile
-SPDXID: SPDXRef-64e0d95d2d264a1f41b00250ca41c585
-FileChecksum: SHA1: 76e6afb4c461e9ad98af1e1754072e1ef1c3c4e6
+SPDXID: SPDXRef-030f23ca5b2ae2de4ce84fe6ff31a7bb
+FileChecksum: SHA1: 14d5666161d4f957916055ad1567d8057bbb162e
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
 
 FileName: ./meson.build
-SPDXID: SPDXRef-720ce07031388e866e87ca02b122f401
-FileChecksum: SHA1: 73cde678c21146787bd5cb104759a6f70587bef3
+SPDXID: SPDXRef-ba6c0ca8fa4ecc8afd84e4d00b25f36d
+FileChecksum: SHA1: 44c6e9afd3c189bcfd3402b892a19274c27dfe3d
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
@@ -167,12 +170,19 @@ LicenseConcluded: NOASSERTION
 LicenseInfoInFile: CC0-1.0
 FileCopyrightText: <text>SPDX-FileCopyrightText: Rusty Russell <rusty@rustcorp.com.au></text>
 
-FileName: ./src/main.c
-SPDXID: SPDXRef-52b03acfba7b048d38a3b49e9e329651
-FileChecksum: SHA1: cef74bc75c1e7cce495cfaa6c6c9f9b3be407df8
+FileName: ./src/db.c
+SPDXID: SPDXRef-85866b05e8c655b3d7595dca4d49af56
+FileChecksum: SHA1: 1cfaba64c47260e025b4742c20c1886346751c57
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
-FileCopyrightText: <text>Copyright (c) 2024 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
+FileCopyrightText: <text>Copyright (c) 2024-2025 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
+
+FileName: ./src/main.c
+SPDXID: SPDXRef-0bc1589dba3ed4255a0e22fa2ca5f2a8
+FileChecksum: SHA1: d2a9e023899047363583930c00fadb1bf42c7bfb
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright (c) 2024-2025 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
 
 FileName: ./src/search.c
 SPDXID: SPDXRef-087f2854498e16d30390e6dc6ae7e62f
@@ -195,10 +205,24 @@ LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (C) 2015-2019 Jason A. Donenfeld <Jason@zx2c4.com>. All Rights Reserved.</text>
 
+FileName: ./src/time.c
+SPDXID: SPDXRef-f6cb525251a93edbebd9cf2ad07db358
+FileChecksum: SHA1: cba233c9b6c8f7bdec0afe7a3d91d013812f3070
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright (c) 2025 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
+
 FileName: ./src/verhaal.h
-SPDXID: SPDXRef-922a547c3b3024be26cbb7826494e0ef
-FileChecksum: SHA1: 9049cd28d9a9a54acbdc711679eb9fca65691d5b
+SPDXID: SPDXRef-4f8b826ccd45d61fe08a0bf30abbac60
+FileChecksum: SHA1: 5ba8b64d4e1f990e3084a5232d7ee101e4a2594f
 LicenseConcluded: NOASSERTION
 LicenseInfoInFile: GPL-2.0-only
 FileCopyrightText: <text>Copyright (c) 2024-2025 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
+
+FileName: ./src/versions.c
+SPDXID: SPDXRef-8c18ac4241d1b624789f01169f25c093
+FileChecksum: SHA1: d58d6194945aec03257aee8dfad072388b0d82c7
+LicenseConcluded: NOASSERTION
+LicenseInfoInFile: GPL-2.0-only
+FileCopyrightText: <text>Copyright (c) 2025 Greg Kroah-Hartman <gregkh@linuxfoundation.org></text>
 
