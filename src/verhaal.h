@@ -11,6 +11,7 @@
 int db_init(void);
 void db_shutdown(void);
 int db_release_add(const char *release, int mainline);
+int db_fix_add(const char *invalid, const char *valid);
 int db_commit_add(const char *sha, const char *release,
 		  int mainline, const char *mainline_id,
 		  const char *reverts, const char *fixes);

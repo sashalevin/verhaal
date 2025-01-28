@@ -4,10 +4,6 @@
 //
 // Database specific stuff
 
-// We have a PRIMARY KEY although it is probably not needed because git ensures us of this anyway...
-//
-// FIXME, make release a foreign key to the releases table:
-//	https://www.sqlite.org/foreignkeys.html
 #include "config.h"
 #include <stdio.h>
 #include <string.h>
@@ -19,6 +15,9 @@
 
 char *database_name;
 
+// We have a PRIMARY KEY although it is probably not needed because git ensures us of this anyway...
+// FIXME, make release a foreign key to the releases table:
+//	https://www.sqlite.org/foreignkeys.html
 static const char *db_create_commits_sql =	"CREATE TABLE IF NOT EXISTS commits "	\
 						"(id TEXT PRIMARY KEY NOT NULL, "	\
 						" release TEXT NOT NULL, "		\
@@ -29,7 +28,13 @@ static const char *db_create_commits_sql =	"CREATE TABLE IF NOT EXISTS commits "
 
 static const char *db_create_releases_sql =	"CREATE TABLE IF NOT EXISTS releases "	\
 						"(release TEXT PRIMARY KEY NOT NULL, "	\
-						"mainline INTEGER);";
+						" mainline INTEGER);";
+
+// FIXME, make sha_valid a foreign key to the commits table:
+//	https://www.sqlite.org/foreignkeys.html
+static const char *db_create_fixes_sql =	"CREATE TABLE IF NOT EXISTS fixes "	\
+						"(sha_invalid TEXT NOT NULL, "	\
+						" sha_valid TEXT NOT NULL);";
 
 static struct sqlite3 *database;
 
@@ -53,6 +58,32 @@ int db_release_add(const char *release, int mainline)
 	ret = sqlite3_step(sql_stmt);
 	if (ret != SQLITE_DONE)
 		fprintf(stderr, "Error inserting release %s row %s\n", release, sqlite3_errmsg(database));
+
+	ret = sqlite3_finalize(sql_stmt);
+
+	return ret;
+}
+
+static const char *db_insert_fixes_sql = "INSERT INTO fixes (sha_invalid, sha_valid) VALUES (?, ?);";
+int db_fix_add(const char *invalid, const char *valid)
+{
+	sqlite3_stmt *sql_stmt = NULL;
+	int ret;
+
+	dbg("%s: %40s %40s\n", __func__, invalid, valid);
+
+	ret = sqlite3_prepare(database, db_insert_fixes_sql, -1, &sql_stmt, NULL);
+	if (ret) {
+		fprintf(stderr, "Error preparing fixes sql statement %s\n",
+			sqlite3_errmsg(database));
+		return ret;
+	}
+	sqlite3_bind_text(sql_stmt, 1, invalid, strlen(invalid), NULL);
+	sqlite3_bind_text(sql_stmt, 2, valid, strlen(valid), NULL);
+
+	ret = sqlite3_step(sql_stmt);
+	if (ret != SQLITE_DONE)
+		fprintf(stderr, "Error inserting fixes %s row %s\n", invalid, sqlite3_errmsg(database));
 
 	ret = sqlite3_finalize(sql_stmt);
 
@@ -257,6 +288,25 @@ static int commits_table_init(void)
 	return ret;
 }
 
+static int fixes_table_init(void)
+{
+	char *error;
+	int ret;
+
+	/* Create the releases table */
+	ret = sqlite3_exec(database, db_create_fixes_sql, 0, 0, &error);
+	if (ret != SQLITE_OK) {
+		fprintf(stderr, "Error creating release table %s %s\n",
+			database_name, error);
+		sqlite3_free(error);
+		sqlite3_close(database);
+		return ret;
+	}
+
+	sqlite3_free(error);
+	return ret;
+}
+
 int db_init(void)
 {
 	int ret;
@@ -266,6 +316,10 @@ int db_init(void)
 		return ret;
 
 	ret = releases_table_init();
+	if (ret)
+		return ret;
+
+	ret = fixes_table_init();
 	if (ret)
 		return ret;
 

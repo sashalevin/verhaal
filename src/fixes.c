@@ -39,6 +39,7 @@ static void add_fix_pair(const char *invalid, const char *valid)
 	strcpy(fix->sha_valid, valid);
 	++max_fixes;
 
+	db_fix_add(invalid, valid);
 	//printf("%s: invalid: %s	valid: %s\n", __func__, invalid, valid);
 }
 
