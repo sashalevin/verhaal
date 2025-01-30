@@ -1,0 +1,152 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Copyright 2000,2025 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+#
+# Search the stable queues and see if there are any fixes missing for the
+# commits in there.
+#
+
+STABLE_QUEUE="/home/gregkh/linux/stable/stable-queue/"
+DB="/home/gregkh/src/verhaal/verhaal.db"
+
+REAL_SCRIPT=$(realpath -e "${BASH_SOURCE[0]}")
+SCRIPT_TOP="${SCRIPT_TOP:-$(dirname "${REAL_SCRIPT}")}"
+
+# Initialize our color variables if we are a normal terminal
+if [[ -t 1 ]]; then
+	txtund=$(tput sgr 0 1)    # Underline
+	txtbld=$(tput bold)       # Bold
+	txtred=$(tput setaf 1)    # Red
+	txtgrn=$(tput setaf 2)    # Green
+	txtylw=$(tput setaf 3)    # Yellow
+	txtblu=$(tput setaf 4)    # Blue
+	txtpur=$(tput setaf 5)    # Purple
+	txtcyn=$(tput setaf 6)    # Cyan
+	txtwht=$(tput setaf 7)    # White
+	txtrst=$(tput sgr0)       # Text reset
+else
+	txtund=""
+	txtbld=""
+	txtred=""
+	txtgrn=""
+	txtylw=""
+	txtblu=""
+	txtpur=""
+	txtcyn=""
+	txtwht=""
+	txtrst=""
+fi
+
+TMPDIR="/home/gregkh/tmp"
+PREFIX="$(basename "${REAL_SCRIPT}")_"
+TMP_PREFIX="${TMPDIR}/${PREFIX}"
+
+usage()
+{
+        echo "error, kernel version not found"
+        echo "usage:"
+        echo "  $0 KERNEL_VERSION"
+        exit 2
+}
+
+save_commit()
+{
+	local commit version mbox
+	commit=$1
+	version=$2
+	mbox=$3
+
+	#echo "${txtylw}in ${version} release, SAVING!${txtrst}"
+	git show --pretty=email "${commit}" | sed -e "s/\[PATCH\]/\[PATCH ${version}\]/" >> "${mbox}"
+}
+
+check_patch()
+{
+	local commit
+	local message
+	local result
+	local short_id
+	local line
+	local patch=$1
+
+	cd "${STABLE_QUEUE}/queue-${KERNEL_VERSION}/" || exit
+	commit=$(cat "${patch}" | awk '{if(NR>1)print}' | grep -E -o '[0-9a-f]{40}' | head -n 1)
+	if [ "${commit}" == "" ] ; then
+		return
+	fi
+	message="${txtcyn}looking at ${txtgrn}${commit}${txtrst} "
+
+	# make the id "short" to catch thing in a Fixes tag of hopefully 10 characters
+	short_id=${commit:0:10}
+	#echo "commit=${commit} short_id=${short_id}"
+	#
+	result=$(sqlite3 ${DB} "SELECT id,release FROM commits WHERE fixes LIKE '%${short_id}%' AND mainline=1;")
+	if [[ "${result}" == "" ]]; then
+		echo "${message}${txtpur}no fixes${txtrst}"
+		return
+	fi
+
+	for line in ${result}; do
+		local line_array=(${line//|/ })
+		local commit_id=${line_array[0]}
+		local kernel_version=${line_array[1]}
+		message+="${txtred}fix found in ${txtylw}${kernel_version}${txtrst} "
+
+		# see if commit is already in the queue
+		local found=$(grep -l -r "${commit_id}" "${STABLE_QUEUE}/queue-${KERNEL_VERSION}/")
+		if [ "${found}" == "" ] ; then
+			save_commit "${commit_id}" "${kernel_version}" "${MBOX}"
+			message+="${txtgrn}saved"
+		else
+			message+="${txtblu}already in queue"
+		fi
+	done
+	echo "${message}"
+}
+
+KERNEL_VERSION=$1
+
+# don't use unset variables
+set -o nounset
+
+if [ "${KERNEL_VERSION}" == "" ] ; then
+        usage
+fi
+
+if [[ ! -d "${STABLE_QUEUE}/queue-${KERNEL_VERSION}/" ]]; then
+	echo "${txtred}Error:${txtrst} ${txtcyn}${KERNEL_VERSION}${txtrst} is not a valid stable queue at the moment."
+	exit 1
+fi
+
+
+MBOX=$(mktemp "${TMP_PREFIX}mbox.XXXXXX") || exit 1
+
+cd "${STABLE_QUEUE}/queue-${KERNEL_VERSION}/" || exit
+
+threads=$(nproc)
+
+echo "Searching the ${txtcyn}${KERNEL_VERSION}${txtrst} queue using ${txtpur}${threads}${txtrst} threads"
+
+for patch in *.patch ; do
+	while :
+	do
+		if [ $(jobs -p | wc -l) -lt ${threads} ]; then
+			check_patch "$patch"
+			#check_patch $patch &
+			break
+		else
+			sleep 1
+		fi
+	done
+done
+wait
+
+num_commits=$(grep -c '^From ' "${MBOX}")
+if [ "${num_commits}" == "0" ] ; then
+	echo "${txtgrn}No missing fixes found!${txtrst}"
+	rm "${MBOX}"
+else
+	echo "# ${txtred}${num_commits}${txtrst} commits are in ${MBOX}"
+	echo "mutt -f ${MBOX}"
+fi
