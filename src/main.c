@@ -665,6 +665,7 @@ static int get_options(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
+	double seconds;
 	int ret;
 
 	terminal_fprintf(stdout, TERMINAL_FG_GREEN "%s" TERMINAL_FG_DEFAULT
@@ -714,7 +715,10 @@ int main(int argc, char *argv[])
 
 	struct vh_timestamp *foo = time_start("git_shutdown");
 	git_shutdown();
-	time_stop(foo);
+	seconds = time_stop(foo);
+	terminal_fprintf(stdout, "    Git shutdown took "
+			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
+			 " seconds\n", seconds);
 
 	db_write_to_disk();
 

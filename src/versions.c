@@ -18,7 +18,7 @@
 #include <time.h>
 #include <git2.h>
 #include "verhaal.h"
-
+#include "terminal.h"
 
 #define NUM_VERSIONS	20000	// Good for a few more years...
 #define NAME_SIZE	20	// should fit the whole vX.Y.Z string size
@@ -128,6 +128,7 @@ static void loop_through_x(int major)
 void versions_create(void)
 {
 	struct vh_timestamp *foo;
+	double seconds;
 
 	foo = time_start(__func__);
 	loop_through_2();
@@ -135,5 +136,8 @@ void versions_create(void)
 	loop_through_x(4);
 	loop_through_x(5);
 	loop_through_x(6);
-	time_stop(foo);
+	seconds = time_stop(foo);
+	terminal_fprintf(stdout, "    Versions create took "
+			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
+			 " seconds\n", seconds);
 }

@@ -24,7 +24,7 @@ char *search_string(const char *string, const char *pattern);
 // time.c
 struct vh_timestamp;
 struct vh_timestamp *time_start(const char *name);
-void time_stop(struct vh_timestamp *time);
+double time_stop(struct vh_timestamp *time);
 
 // versions.c
 void versions_create(void);

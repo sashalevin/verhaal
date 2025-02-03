@@ -37,22 +37,23 @@ struct vh_timestamp *time_start(const char *name)
 	return start;
 }
 
-void time_stop(struct vh_timestamp *start)
+double time_stop(struct vh_timestamp *start)
 {
 	struct timespec stop;
 	double seconds;
 
 	if (!start)
-		return;
+		return 0;
 
 	if (clock_gettime(CLOCK_REALTIME, &stop)) {
 		fprintf(stderr, "%s: error getting time\n", __func__);
-		return;
+		return 0;
 	}
 
 	seconds = ((double)stop.tv_sec + (1.0e-9 * stop.tv_nsec)) -
 		  ((double)start->tv.tv_sec + (1.0e-9 * start->tv.tv_nsec));
 
-	printf("%s: %.5f seconds\n", start->name, seconds);
+	//printf("%s: %.5f seconds\n", start->name, seconds);
 	free(start);
+	return seconds;
 }

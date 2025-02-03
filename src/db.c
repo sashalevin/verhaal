@@ -133,6 +133,7 @@ int db_commit_add(const char *sha, const char *release,
 int db_write_to_disk(void)
 {
 	int ret;
+	double seconds;
 	sqlite3 *file;
 	sqlite3_backup *backup;
 	struct vh_timestamp *foo;
@@ -157,7 +158,10 @@ int db_write_to_disk(void)
 
 	sqlite3_close(file);
 exit:
-	time_stop(foo);
+	seconds = time_stop(foo);
+	terminal_fprintf(stdout, "    Database write to disk took "
+			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
+			 " seconds\n", seconds);
 	return ret;
 }
 

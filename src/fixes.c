@@ -13,6 +13,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "verhaal.h"
+#include "terminal.h"
 
 #define NUM_FIXES	3000
 #define FIXES_FILE	"fixes.txt"
@@ -68,6 +69,7 @@ void fixes_init(void)
 {
 	struct vh_timestamp *foo;
 	FILE *fixes_file;
+	double seconds;
 	size_t size;
 	size_t read;
 	char *buffer;
@@ -114,6 +116,9 @@ void fixes_init(void)
 
 exit:
 	fclose(fixes_file);
-	time_stop(foo);
+	seconds = time_stop(foo);
+	terminal_fprintf(stdout, "    Fixes parsing took took "
+			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
+			 " seconds\n", seconds);
 }
 
