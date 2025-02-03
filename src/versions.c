@@ -55,7 +55,6 @@ static void add_version(const char *version, bool mainline)
 
 	// Add the version to the database
 	db_release_add(version, mainline);
-
 }
 
 static void add_version_major(const char *version)

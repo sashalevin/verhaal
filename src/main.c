@@ -458,9 +458,6 @@ static int create_kernel_range_rc(void)
 	snprintf(range2, sizeof(range2), "%d.%d-rc1", major, minor);
 	create_kernel_range_major(range1, range2);
 
-	// FIXME, should be in versions.c
-	db_release_add(range1, 1);
-
 	// Let's walk through as many -rc releases as we can think of
 	for (int i = 1; i < 12; ++i) {
 		snprintf(range1, sizeof(range1), "v%s-rc%d", &head_tag[1], i);
