@@ -61,24 +61,48 @@ save_commit()
 	git show --pretty=email "${commit}" | sed -e "s/\[PATCH\]/\[PATCH ${version}\]/" >> "${mbox}"
 }
 
-# Array of ids to search for fixes for
-fix_ids=()
-
 check_patch()
 {
 	local commit
+	local message
+	local result
 	local short_id
+	local line
 	local patch=$1
 
+	cd "${STABLE_QUEUE}/queue-${KERNEL_VERSION}/" || exit
 	commit=$(cat "${patch}" | awk '{if(NR>1)print}' | grep -E -o '[0-9a-f]{40}' | head -n 1)
 	if [ "${commit}" == "" ] ; then
 		return
 	fi
+	message="${txtcyn}looking at ${txtgrn}${commit}${txtrst} "
 
 	# make the id "short" to catch thing in a Fixes tag of hopefully 10 characters
 	short_id=${commit:0:10}
-	fix_ids+=("${short_id}")
-	return
+	#echo "commit=${commit} short_id=${short_id}"
+	#
+	result=$(sqlite3 ${DB} "SELECT id,release FROM commits WHERE fixes LIKE '%${short_id}%' AND mainline=1;")
+	if [[ "${result}" == "" ]]; then
+		echo "${message}${txtpur}no fixes${txtrst}"
+		return
+	fi
+
+	for line in ${result}; do
+		local line_array=(${line//|/ })
+		local commit_id=${line_array[0]}
+		local kernel_version=${line_array[1]}
+		message+="${txtred}fix found in ${txtylw}${kernel_version}${txtrst} "
+
+		# see if commit is already in the queue
+		local found=$(grep -l -r "${commit_id}" "${STABLE_QUEUE}/queue-${KERNEL_VERSION}/")
+		if [ "${found}" == "" ] ; then
+			save_commit "${commit_id}" "${kernel_version}" "${MBOX}"
+			message+="${txtgrn}saved"
+		else
+			message+="${txtblu}already in queue"
+		fi
+	done
+	echo "${message}"
 }
 
 KERNEL_VERSION=$1
@@ -95,44 +119,28 @@ if [[ ! -d "${STABLE_QUEUE}/queue-${KERNEL_VERSION}/" ]]; then
 	exit 1
 fi
 
+
 MBOX=$(mktemp "${TMP_PREFIX}mbox.XXXXXX") || exit 1
 
 cd "${STABLE_QUEUE}/queue-${KERNEL_VERSION}/" || exit
 
-echo "# Searching the ${txtcyn}${KERNEL_VERSION}${txtrst} queue for all potential fixes"
+threads=$(nproc)
+
+echo "Searching the ${txtcyn}${KERNEL_VERSION}${txtrst} queue using ${txtpur}${threads}${txtrst} threads"
 
 for patch in *.patch ; do
-	check_patch "$patch"
+	while :
+	do
+		if [ $(jobs -p | wc -l) -lt ${threads} ]; then
+			check_patch "$patch"
+			#check_patch $patch &
+			break
+		else
+			sleep 1
+		fi
+	done
 done
-
-echo "#  Found ${txtylw}${#fix_ids[@]}${txtrst} commits to search for"
-
-query="sqlite3 ${DB} \"SELECT id,release FROM commits WHERE mainline=1 AND ("
-for id in "${fix_ids[@]}"; do
-	query+="fixes LIKE '%${id}%' OR "
-done
-# hack, duplicate the last id again to properly terminate the query
-query+="fixes LIKE '%${id}%');\""
-
-QUERY_FILE=$(mktemp "${TMP_PREFIX}query.XXXXXX") || exit 1
-echo "${query}" > ${QUERY_FILE}
-res=$(bash ${QUERY_FILE})
-rm "${QUERY_FILE}"
-
-for line in ${res}; do
-	line_array=(${line//|/ })
-	commit_id=${line_array[0]}
-	kernel_version=${line_array[1]}
-
-	# see if commit is already in the queue
-	found=$(grep -l -r "${commit_id}" "${STABLE_QUEUE}/queue-${KERNEL_VERSION}/")
-	if [ "${found}" == "" ] ; then
-		save_commit "${commit_id}" "${kernel_version}" "${MBOX}"
-		echo "#  saving ${txtcyn}${commit_id}${txtrst} as it is in ${txtylw}${kernel_version}${txtrst}"
-	else
-		echo "#  ${txtcyn}${commit_id}${txtrst} is already in queue"
-	fi
-done
+wait
 
 num_commits=$(grep -c '^From ' "${MBOX}")
 if [ "${num_commits}" == "0" ] ; then
