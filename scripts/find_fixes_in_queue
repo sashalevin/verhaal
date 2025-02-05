@@ -72,6 +72,7 @@ check_patch()
 
 	commit=$(cat "${patch}" | awk '{if(NR>1)print}' | grep -E -o '[0-9a-f]{40}' | head -n 1)
 	if [ "${commit}" == "" ] ; then
+		echo "#  patch ${txtcyn}${patch}${txtrst} has no commit id?"
 		return
 	fi
 
@@ -119,19 +120,30 @@ echo "${query}" > ${QUERY_FILE}
 res=$(bash ${QUERY_FILE})
 rm "${QUERY_FILE}"
 
+# Get the number of fixes found
+num_fixes=0
+for line in ${res}; do
+	num_fixes=$(($num_fixes+1))
+done
+
+echo "#  ${txtpur}${num_fixes}${txtrst} fixes found to check for queue inclusion"
+
 for line in ${res}; do
 	line_array=(${line//|/ })
 	commit_id=${line_array[0]}
 	kernel_version=${line_array[1]}
 
+	message="#  Fix commit ${txtgrn}${commit_id}${txtrst} is found in ${txtylw}${kernel_version}${txtrst} "
+
 	# see if commit is already in the queue
 	found=$(grep -l -r "${commit_id}" "${STABLE_QUEUE}/queue-${KERNEL_VERSION}/")
 	if [ "${found}" == "" ] ; then
 		save_commit "${commit_id}" "${kernel_version}" "${MBOX}"
-		echo "#  saving ${txtcyn}${commit_id}${txtrst} as it is in ${txtylw}${kernel_version}${txtrst}"
+		message+="${txtgrn}saved${txtrst}"
 	else
-		echo "#  ${txtcyn}${commit_id}${txtrst} is already in queue"
+		message+="${txtblu}already in queue${txtrst}"
 	fi
+	echo "${message}"
 done
 
 num_commits=$(grep -c '^From ' "${MBOX}")
