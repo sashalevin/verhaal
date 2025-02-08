@@ -662,6 +662,7 @@ static int get_options(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
+	struct vh_timestamp *foo;
 	double seconds;
 	int ret;
 
@@ -690,6 +691,8 @@ int main(int argc, char *argv[])
 
 	fixes_init();
 
+	foo = time_start("process_commits");
+
 	loop_through_2();
 	loop_through_x(3);
 	loop_through_x(4);
@@ -710,7 +713,12 @@ int main(int argc, char *argv[])
 
 	terminal_fprintf(stdout, "\n");
 
-	struct vh_timestamp *foo = time_start("git_shutdown");
+	seconds = time_stop(foo);
+	terminal_fprintf(stdout, "    Processing commits took "
+			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
+			 " seconds\n", seconds);
+
+	foo = time_start("git_shutdown");
 	git_shutdown();
 	seconds = time_stop(foo);
 	terminal_fprintf(stdout, "    Git shutdown took "
