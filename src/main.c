@@ -41,6 +41,7 @@ struct commit {
 git_repository *git_repo;
 static char *git_repo_location;
 static const char *database_name_default = DATABASE_NAME;
+static int num_commits;
 
 static bool fixes_print = false;
 
@@ -339,6 +340,7 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 		ret = db_commit_add(sha, end, mainline, upstream, reverts, fixes);
 		if (ret)
 			goto exit;
+		num_commits++;
 
 		if (upstream)
 			free(upstream);
@@ -714,9 +716,14 @@ int main(int argc, char *argv[])
 	terminal_fprintf(stdout, "\n");
 
 	seconds = time_stop(foo);
-	terminal_fprintf(stdout, "    Processing commits took "
+	terminal_fprintf(stdout, "    Processing "
+			 TERMINAL_FG_CYAN "%d" TERMINAL_FG_DEFAULT
+			 " commits took "
 			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
-			 " seconds\n", seconds);
+			 " seconds, "
+			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
+			 " seconds/commit\n", num_commits, seconds,
+			 (seconds / (double)num_commits));
 
 	foo = time_start("git_shutdown");
 	git_shutdown();
