@@ -228,6 +228,7 @@ static int db_read_from_disk(void)
 
 static int database_init(void)
 {
+	char *error;
 	int ret;
 
 	// We open an in-memory database to create everything, and then write it all out at the very
@@ -239,6 +240,26 @@ static int database_init(void)
 		sqlite3_close(database);
 		return ret;
 	}
+
+	// Configure SQLite for "optimal" performance
+	const char *pragmas[] = {
+		"PRAGMA synchronous = OFF",     // Safe for in-memory DB
+		"PRAGMA cache_size = -2000000", // 2GB cache
+		"PRAGMA temp_store = MEMORY",   // In-memory temp storage
+		"PRAGMA foreign_keys = ON",     // Enable foreign key support
+		NULL
+	};
+
+	for (const char **pragma = pragmas; *pragma != NULL; pragma++) {
+		ret = sqlite3_exec(database, *pragma, 0, 0, &error);
+		if (ret != SQLITE_OK) {
+			fprintf(stderr, "Error setting pragma %s: %s\n", *pragma, error);
+			sqlite3_free(error);
+			sqlite3_close(database);
+			return ret;
+		}
+	}
+
 	return ret;
 }
 
