@@ -24,7 +24,11 @@ static const char *db_create_commits_sql =	"CREATE TABLE IF NOT EXISTS commits "
 						" mainline INTEGER,"			\
 						" mainline_id TEXT,"			\
 						" reverts TEXT,"			\
-						" fixes TEXT);";
+						" fixes TEXT);"				\
+						"CREATE INDEX IF NOT EXISTS idx_commits_mainline_id ON commits(mainline_id);"	\
+						"CREATE INDEX IF NOT EXISTS idx_commits_reverts ON commits(reverts);"		\
+						"CREATE INDEX IF NOT EXISTS idx_commits_id_mainline ON commits(id, mainline);"	\
+						"CREATE INDEX IF NOT EXISTS idx_commits_release ON commits(release);";
 
 static const char *db_create_releases_sql =	"CREATE TABLE IF NOT EXISTS releases "	\
 						"(release TEXT PRIMARY KEY NOT NULL, "	\
