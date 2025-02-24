@@ -251,6 +251,7 @@ static int database_init(void)
 		"PRAGMA cache_size = -2000000", // 2GB cache
 		"PRAGMA temp_store = MEMORY",   // In-memory temp storage
 		"PRAGMA foreign_keys = ON",     // Enable foreign key support
+		"PRAGMA journal_mode = WAL",	// Enable Write-Ahead-Logging https://www.sqlite.org/wal.html  Might not do much for an in-memory db, but let's be safe
 		NULL
 	};
 
