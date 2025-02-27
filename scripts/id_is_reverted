@@ -11,7 +11,7 @@ REAL_SCRIPT=$(realpath -e "${BASH_SOURCE[0]}")
 SCRIPT_TOP="${SCRIPT_TOP:-$(dirname "${REAL_SCRIPT}")}"
 
 # Location of our database.  Should be initialized already.
-DB="${SCRIPT_TOP}"/verhaal.db
+DB="${SCRIPT_TOP}"/../verhaal.db
 
 id=$1
 
