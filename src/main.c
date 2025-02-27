@@ -102,9 +102,9 @@ static char *find_sha1_full(const char *string)
 
 static char *find_sha1_short(const char *string)
 {
-	// At least 10 characters long, we might miss some odd ones, but
+	// At least 7 characters long, we might miss some odd ones, but
 	// it's a good start as they _should_ all be at least 12 long.
-	return search_string(string, "[a-f0-9]{10,}");
+	return search_string(string, "[a-f0-9]{7,}");
 }
 
 static char *find_upstream(const char *message)
