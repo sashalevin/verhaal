@@ -1,0 +1,29 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0-only
+#
+# Copyright 2025 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+#
+# Given a git commit id, see if it is a revert, and if so, return the git id it
+# is reverting
+#
+# Relies on the sql database to be present.
+
+REAL_SCRIPT=$(realpath -e "${BASH_SOURCE[0]}")
+SCRIPT_TOP="${SCRIPT_TOP:-$(dirname "${REAL_SCRIPT}")}"
+
+# Location of our database.  Should be initialized already.
+DB="${SCRIPT_TOP}"/../verhaal.db
+
+id=$1
+
+if [ "${id}" == "" ] ; then
+        echo "$0 ID_TO_FIND"
+        exit 1
+fi
+
+reverts=$(sqlite3 ${DB} "SELECT reverts FROM commits WHERE id='${id}';")
+if [[ "${reverts}" == "" ]] ; then
+	exit 1
+fi
+echo "${reverts}"
+exit 0
