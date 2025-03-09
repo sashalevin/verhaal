@@ -244,7 +244,7 @@ static char *find_fixes(const char *message)
 	return final;
 }
 
-static int create_kernel_range(const char *start, const char *end, bool minor)
+static int create_kernel_range(const char *start, const char *end, bool major)
 {
 	char *upstream = NULL;
 	char *reverts = NULL;
@@ -256,10 +256,10 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 	int mainline;
 
 	// Set "is this mainline or not" flag to be stored later
-	if (minor)
-		mainline = 0;
-	else
+	if (major)
 		mainline = 1;
+	else
+		mainline = 0;
 
 	dbg("%s: start=%s, end=%s, mainline=%d\n", __func__, start, end, mainline);
 
@@ -318,7 +318,7 @@ static int create_kernel_range(const char *start, const char *end, bool minor)
 
 		// If this is a minor range, search the changelog message to figure out if this is
 		// an upstream id, and if so, what it is and then save it off.
-		if (minor) {
+		if (!major) {
 			upstream = find_upstream(message);
 			if (upstream)
 				dbg("	upstream=%s\n", upstream);
@@ -360,12 +360,12 @@ exit:
 
 static int create_kernel_range_major(const char *major, const char *minor)
 {
-	return create_kernel_range(major, minor, false);
+	return create_kernel_range(major, minor, true);
 }
 
 static int create_kernel_range_minor(const char *major, const char *minor)
 {
-	return create_kernel_range(major, minor, true);
+	return create_kernel_range(major, minor, false);
 }
 
 static int create_kernel_range_rc(void)
@@ -692,6 +692,8 @@ int main(int argc, char *argv[])
 
 	foo = time_start("process_commits");
 
+	for_each_range_do(&create_kernel_range);
+#if 0
 	loop_through_2();
 	loop_through_x(3);
 	loop_through_x(4);
@@ -704,11 +706,11 @@ int main(int argc, char *argv[])
 	create_kernel_range_major("3.19", "4.0");
 	create_kernel_range_major("4.20", "5.0");
 	create_kernel_range_major("5.19", "6.0");
-
 	terminal_fprintf(stdout, "\n");
 
 	// Fill in the last little bit of -rc release information if we have it in the tree
 	create_kernel_range_rc();
+#endif
 
 	terminal_fprintf(stdout, "\n");
 

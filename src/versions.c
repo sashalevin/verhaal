@@ -125,18 +125,23 @@ static void add_version_range_minor(const char *major, const char *minor)
 	add_version_range(major, minor, false);
 }
 
-#if 0
-void for_each_range_do(do_it_function())
+void for_each_range_do(int (*do_it_function)(const char *major, const char *minor, bool mainline))
 {
+	struct version_range *vr;
+	int ret;
 	int x;
 
 	// FIXME here is where we can thread the heck out of this.  Maybe...
 	for (x = 0; x < max_version_range; x++) {
 		vr = &version_range_array[x];
-		do_it_function(vr->v_from.name, vr->v_to.name, vr->mainline);
+		ret = do_it_function(vr->v_from.name, vr->v_to.name, vr->mainline);
+		if (ret) {
+			printf("do_it failed for %s, %s, %d\n", vr->v_from.name, vr->v_to.name, vr->mainline);
+			return;
+		}
+
 	}
 }
-#endif
 
 static void loop_through_2(void)
 {
@@ -492,6 +497,9 @@ void versions_create(void)
 	add_version_range_major("5.19", "6.0");
 
 	seconds = time_stop(foo);
+	terminal_fprintf(stdout, "	"
+			 TERMINAL_FG_CYAN "%d" TERMINAL_FG_DEFAULT
+			 " version ranges created\n", max_version_range);
 	terminal_fprintf(stdout, "    Version range creation took "
 			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
 			 " seconds\n", seconds);

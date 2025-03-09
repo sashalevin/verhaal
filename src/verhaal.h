@@ -5,6 +5,7 @@
 #ifndef __VERHAAL_H__
 #define __VERHAAL_H__
 
+#include <stdbool.h>
 #include <git2.h>
 
 // db.c
@@ -28,6 +29,7 @@ double time_stop(struct vh_timestamp *time);
 
 // versions.c
 void versions_create(void);
+void for_each_range_do(int (*do_it_function)(const char *major, const char *minor, bool mainline));
 
 // fixes.c
 void fixes_init(void);
