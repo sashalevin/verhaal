@@ -470,9 +470,6 @@ static int create_kernel_range_rc(void)
 		snprintf(range1, sizeof(range1), "%s-rc%d", &head_tag[1], i);
 		snprintf(range2, sizeof(range2), "%s-rc%d", &head_tag[1], i + 1);
 		create_kernel_range_major(range1, range2);
-
-		// FIXME, should be in versions.c
-		db_release_add(range1, 1);
 	}
 
 exit:
