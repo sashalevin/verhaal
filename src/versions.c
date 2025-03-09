@@ -23,13 +23,31 @@
 #define NUM_VERSIONS	20000	// Good for a few more years...
 #define NAME_SIZE	20	// should fit the whole vX.Y.Z string size
 
+/* A specific version, and if it is in mainline or not */
 struct version {
 	char name[NAME_SIZE];
 	bool mainline;
 };
 
+/*
+ * Version ranges are the steps from one release to another, the granularity in
+ * which we want to calculate commits in.  While we keep the individual release
+ * versions in the database to lookup mainline/not_mainline info from, it is
+ * these "ranges" that matter in how we spelunk through git and save git ids
+ */
+struct version_range {
+	struct version v_from;
+	struct version v_to;
+};
+
+/* Yes, we could use a vector, or linked list, but hey, this is userspace, we
+ * have a ton of memory, just use a simple array and be done with it.
+ */
 static struct version version_array[NUM_VERSIONS];
 static int max_version;
+
+static struct version_range version_range_array[NUM_VERSIONS];
+static int max_version_range;
 
 static bool is_valid_release(const char *version)
 {
@@ -52,6 +70,10 @@ static void add_version(const char *version, bool mainline)
 
 	//printf("%d	%s	%d\n", max_version, version, mainline);
 	max_version++;
+	if (max_version > NUM_VERSIONS) {
+		fprintf(stderr, "Number of versions just overflowed, fix NUM_VERSIONS to be bigger!\n");
+		exit(1);
+	}
 
 	// Add the version to the database
 	db_release_add(version, mainline);
@@ -65,6 +87,19 @@ static void add_version_major(const char *version)
 static void add_version_minor(const char *version)
 {
 	add_version(version, false);
+}
+
+static void add_version_range(const char *from, const char *to)
+{
+	struct version_range *vr = &version_range_array[max_version_range];
+
+	strcpy(vr->v_from.name, from);
+	strcpy(vr->v_to.name, to);
+
+	// Don't care about the mainline value for now
+
+	//printf("%d	%s	%d\n", max_version_range, from, to);
+	max_version_range++;
 }
 
 static void loop_through_2(void)
