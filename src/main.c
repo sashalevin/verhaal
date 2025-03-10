@@ -392,7 +392,7 @@ static void help(void)
 	fprintf(stdout, "	--verbose -V	Turn debugging messages on (warning, lots of junk here)\n");
 	fprintf(stdout, "	--version -v	Print the version of the program and exit\n");
 	fprintf(stdout, "	--database=	Change the default database name from '%s' to the provided one\n",
-		database_name);
+		database_name_default);
 	exit(1);
 }
 
