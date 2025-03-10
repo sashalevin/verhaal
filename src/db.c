@@ -34,6 +34,11 @@ static const char *db_create_releases_sql =	"CREATE TABLE IF NOT EXISTS releases
 						"(release TEXT PRIMARY KEY NOT NULL, "	\
 						" mainline INTEGER);";
 
+static const char *db_create_ranges_sql =	"CREATE TABLE IF NOT EXISTS ranges "	\
+						 "(version_from TEXT NOT NULL, "	\
+						 " version_to TEXT NOT NULL, "		\
+						 " mainline INTEGER);";
+
 // FIXME, make sha_valid a foreign key to the commits table:
 //	https://www.sqlite.org/foreignkeys.html
 static const char *db_create_fixes_sql =	"CREATE TABLE IF NOT EXISTS fixes "	\
@@ -62,6 +67,33 @@ int db_release_add(const char *release, int mainline)
 	ret = sqlite3_step(sql_stmt);
 	if (ret != SQLITE_DONE)
 		fprintf(stderr, "Error inserting release %s row %s\n", release, sqlite3_errmsg(database));
+
+	ret = sqlite3_finalize(sql_stmt);
+
+	return ret;
+}
+
+static const char *db_insert_range_sql = "INSERT INTO ranges (version_from, version_to, mainline) VALUES (?, ?, ?);";
+int db_range_add(const char *from, const char *to, int mainline)
+{
+	sqlite3_stmt *sql_stmt = NULL;
+	int ret;
+
+	dbg("%s: %10s %10s mainline=%d\n", __func__, from, to, mainline);
+
+	ret = sqlite3_prepare(database, db_insert_range_sql, -1, &sql_stmt, NULL);
+	if (ret) {
+		fprintf(stderr, "Error preparing release sql statement %s\n",
+			sqlite3_errmsg(database));
+		return ret;
+	}
+	sqlite3_bind_text(sql_stmt, 1, from, strlen(from), NULL);
+	sqlite3_bind_text(sql_stmt, 2, to, strlen(to), NULL);
+	sqlite3_bind_int(sql_stmt, 3, mainline);
+
+	ret = sqlite3_step(sql_stmt);
+	if (ret != SQLITE_DONE)
+		fprintf(stderr, "Error inserting range %s %s row %s\n", from, to, sqlite3_errmsg(database));
 
 	ret = sqlite3_finalize(sql_stmt);
 
@@ -287,6 +319,25 @@ static int releases_table_init(void)
 	return ret;
 }
 
+static int ranges_table_init(void)
+{
+	char *error;
+	int ret;
+
+	/* Create the releases table */
+	ret = sqlite3_exec(database, db_create_ranges_sql, 0, 0, &error);
+	if (ret != SQLITE_OK) {
+		fprintf(stderr, "Error creating ranges table %s %s\n",
+			database_name, error);
+		sqlite3_free(error);
+		sqlite3_close(database);
+		return ret;
+	}
+
+	sqlite3_free(error);
+	return ret;
+}
+
 static int commits_table_init(void)
 {
 	char *error;
@@ -346,6 +397,10 @@ int db_init(void)
 		return ret;
 
 	ret = releases_table_init();
+	if (ret)
+		return ret;
+
+	ret = ranges_table_init();
 	if (ret)
 		return ret;
 

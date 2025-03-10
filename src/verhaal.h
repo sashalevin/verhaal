@@ -12,6 +12,7 @@
 int db_init(void);
 void db_shutdown(void);
 int db_release_add(const char *release, int mainline);
+int db_range_add(const char *from, const char *to, int mainline);
 int db_fix_add(const char *invalid, const char *valid);
 int db_commit_add(const char *sha, const char *release,
 		  int mainline, const char *mainline_id,

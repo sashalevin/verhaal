@@ -113,6 +113,8 @@ static void add_version_range(const char *from, const char *to, bool mainline)
 
 	//printf("%s: from: %s	to: %s	mainline: %d\n", __func__, from, to, mainline);
 	max_version_range++;
+
+	db_range_add(from, to, mainline);
 }
 
 static void add_version_range_major(const char *major, const char *minor)
@@ -243,7 +245,7 @@ static char *get_head_tag(void)
 	if (ret)
 		fprintf(stderr, "git_describe_format() failed: %d\n", ret);
 
-	terminal_fprintf(stdout, "  git head tag = " TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT "\n",
+	terminal_fprintf(stdout, "    git head tag = " TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT "\n",
 			 buf.ptr);
 
 	head_tag = strdup(buf.ptr);
@@ -475,9 +477,11 @@ void versions_create(void)
 	loop_through_x(6);
 	loop_through_rc();
 	seconds = time_stop(foo);
-	terminal_fprintf(stdout, "    Versions creation took "
+	terminal_fprintf(stdout, "    "
+			 TERMINAL_FG_CYAN "%d" TERMINAL_FG_DEFAULT
+			 " versions created in "
 			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
-			 " seconds\n", seconds);
+			 " seconds\n", max_version, seconds);
 
 
 	// Create the ranges
@@ -499,10 +503,9 @@ void versions_create(void)
 	add_version_range_rc();
 
 	seconds = time_stop(foo);
-	terminal_fprintf(stdout, "	"
+	terminal_fprintf(stdout, "    "
 			 TERMINAL_FG_CYAN "%d" TERMINAL_FG_DEFAULT
-			 " version ranges created\n", max_version_range);
-	terminal_fprintf(stdout, "    Version range creation took "
+			 " version ranges created in "
 			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
-			 " seconds\n", seconds);
+			 " seconds\n", max_version_range, seconds);
 }
