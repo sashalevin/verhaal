@@ -232,8 +232,10 @@ static char *find_fixes(const char *message)
 	return final;
 }
 
-static int create_kernel_range(const char *start, const char *end, bool major)
+static int create_kernel_range(struct version_range *vr)
 {
+	const char *start = vr->from.name;
+	const char *end = vr->to.name;
 	char *upstream = NULL;
 	char *reverts = NULL;
 	char *fixes = NULL;
@@ -241,15 +243,15 @@ static int create_kernel_range(const char *start, const char *end, bool major)
 	git_oid oid;
 	git_revwalk *walker;
 	int ret;
-	int mainline;
+	int mainline_int;
 
 	// Set "is this mainline or not" flag to be stored later
-	if (major)
-		mainline = 1;
+	if (vr->mainline)
+		mainline_int = 1;
 	else
-		mainline = 0;
+		mainline_int = 0;
 
-	dbg("%s: start=%s, end=%s, mainline=%d\n", __func__, start, end, mainline);
+	dbg("%s: start=%s, end=%s, mainline=%d\n", __func__, start, end, mainline_int);
 
 	// Let's first see if these are a few "known" ranges that we know we can
 	// never find, thanks to the start of the git repo and how the first few
@@ -304,9 +306,10 @@ static int create_kernel_range(const char *start, const char *end, bool major)
 
 		message = git_commit_message(commit);
 
-		// If this is a minor range, search the changelog message to figure out if this is
-		// an upstream id, and if so, what it is and then save it off.
-		if (!major) {
+		// If this is not a mainline range, search the changelog message
+		// to figure out if this is an upstream id, and if so, what it
+		// is and then save it off.
+		if (!vr->mainline) {
 			upstream = find_upstream(message);
 			if (upstream)
 				dbg("	upstream=%s\n", upstream);
@@ -325,7 +328,7 @@ static int create_kernel_range(const char *start, const char *end, bool major)
 		git_commit_free(commit);
 
 		// Save it in the database
-		ret = db_commit_add(sha, end, mainline, upstream, reverts, fixes);
+		ret = db_commit_add(sha, end, mainline_int, upstream, reverts, fixes);
 		if (ret)
 			goto exit;
 		num_commits++;

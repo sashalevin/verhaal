@@ -21,25 +21,6 @@
 #include "terminal.h"
 
 #define NUM_VERSIONS	20000	// Good for a few more years...
-#define NAME_SIZE	20	// should fit the whole vX.Y.Z string size
-
-/* A specific version, and if it is in mainline or not */
-struct version {
-	char name[NAME_SIZE];
-	bool mainline;
-};
-
-/*
- * Version ranges are the steps from one release to another, the granularity in
- * which we want to calculate commits in.  While we keep the individual release
- * versions in the database to lookup mainline/not_mainline info from, it is
- * these "ranges" that matter in how we spelunk through git and save git ids
- */
-struct version_range {
-	struct version v_from;
-	struct version v_to;
-	bool mainline;
-};
 
 /* Yes, we could use a vector, or linked list, but hey, this is userspace, we
  * have a ton of memory, just use a simple array and be done with it.
@@ -107,8 +88,8 @@ static void add_version_range(const char *from, const char *to, bool mainline)
 		return;
 	}
 
-	strcpy(vr->v_from.name, from);
-	strcpy(vr->v_to.name, to);
+	strcpy(vr->from.name, from);
+	strcpy(vr->to.name, to);
 	vr->mainline = mainline;
 
 	//printf("%s: from: %s	to: %s	mainline: %d\n", __func__, from, to, mainline);
@@ -127,7 +108,7 @@ static void add_version_range_minor(const char *major, const char *minor)
 	add_version_range(major, minor, false);
 }
 
-void for_each_range_do(int (*do_it_function)(const char *major, const char *minor, bool mainline))
+void for_each_range_do(int (*do_it_function)(struct version_range *vr))
 {
 	struct version_range *vr;
 	int ret;
@@ -136,9 +117,9 @@ void for_each_range_do(int (*do_it_function)(const char *major, const char *mino
 	// FIXME here is where we can thread the heck out of this.  Maybe...
 	for (x = 0; x < max_version_range; x++) {
 		vr = &version_range_array[x];
-		ret = do_it_function(vr->v_from.name, vr->v_to.name, vr->mainline);
+		ret = do_it_function(vr);
 		if (ret) {
-			printf("do_it failed for %s, %s, %d\n", vr->v_from.name, vr->v_to.name, vr->mainline);
+			printf("do_it failed for %s, %s, %d\n", vr->from.name, vr->to.name, vr->mainline);
 			return;
 		}
 

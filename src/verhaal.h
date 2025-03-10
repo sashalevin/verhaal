@@ -8,6 +8,26 @@
 #include <stdbool.h>
 #include <git2.h>
 
+#define VERSION_NAME_SIZE	20	// should fit the whole vX.Y.Z string size
+
+/* A specific version, and if it is in mainline or not */
+struct version {
+	char name[VERSION_NAME_SIZE];
+	bool mainline;
+};
+
+/*
+ * Version ranges are the steps from one release to another, the granularity in
+ * which we want to calculate commits in.  While we keep the individual release
+ * versions in the database to lookup mainline/not_mainline info from, it is
+ * these "ranges" that matter in how we spelunk through git and save git ids
+ */
+struct version_range {
+	struct version from;	// git tag start
+	struct version to;	// git tag end
+	bool mainline;		// If this is a "mainline" range
+};
+
 // db.c
 int db_init(void);
 void db_shutdown(void);
@@ -30,7 +50,7 @@ double time_stop(struct vh_timestamp *time);
 
 // versions.c
 void versions_create(void);
-void for_each_range_do(int (*do_it_function)(const char *major, const char *minor, bool mainline));
+void for_each_range_do(int (*do_it_function)(struct version_range *vr));
 
 // fixes.c
 void fixes_init(void);
