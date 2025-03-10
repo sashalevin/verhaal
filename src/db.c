@@ -39,6 +39,9 @@ static const char *db_create_ranges_sql =	"CREATE TABLE IF NOT EXISTS ranges "	\
 						 " version_to TEXT NOT NULL, "		\
 						 " mainline INTEGER);";
 
+static const char *db_create_version_sql =	"CREATE TABLE IF NOT EXISTS version "	\
+						 "(version TEXT NOT NULL);";
+
 // FIXME, make sha_valid a foreign key to the commits table:
 //	https://www.sqlite.org/foreignkeys.html
 static const char *db_create_fixes_sql =	"CREATE TABLE IF NOT EXISTS fixes "	\
@@ -300,16 +303,16 @@ static int database_init(void)
 	return ret;
 }
 
-static int releases_table_init(void)
+static int create_table(const char *table_name, const char *sql)
 {
 	char *error;
 	int ret;
 
 	/* Create the releases table */
-	ret = sqlite3_exec(database, db_create_releases_sql, 0, 0, &error);
+	ret = sqlite3_exec(database, sql, 0, 0, &error);
 	if (ret != SQLITE_OK) {
-		fprintf(stderr, "Error creating release table %s %s\n",
-			database_name, error);
+		fprintf(stderr, "Error '%s' when attempting to create table %s in database file %s\n",
+			error, table_name, database_name);
 		sqlite3_free(error);
 		sqlite3_close(database);
 		return ret;
@@ -319,23 +322,15 @@ static int releases_table_init(void)
 	return ret;
 }
 
+
+static int releases_table_init(void)
+{
+	return create_table("releases", db_create_releases_sql);
+}
+
 static int ranges_table_init(void)
 {
-	char *error;
-	int ret;
-
-	/* Create the releases table */
-	ret = sqlite3_exec(database, db_create_ranges_sql, 0, 0, &error);
-	if (ret != SQLITE_OK) {
-		fprintf(stderr, "Error creating ranges table %s %s\n",
-			database_name, error);
-		sqlite3_free(error);
-		sqlite3_close(database);
-		return ret;
-	}
-
-	sqlite3_free(error);
-	return ret;
+	return create_table("ranges", db_create_ranges_sql);
 }
 
 static int commits_table_init(void)
@@ -343,18 +338,12 @@ static int commits_table_init(void)
 	char *error;
 	int ret;
 
-	/* Create the tables if it's not been initialized yet */
-	ret = sqlite3_exec(database, db_create_commits_sql, 0, 0, &error);
-	if (ret != SQLITE_OK) {
-		fprintf(stderr, "Error creating commits table %s %s\n",
-			database_name, error);
-		sqlite3_free(error);
-		sqlite3_close(database);
+	ret = create_table("commits", db_create_commits_sql);
+	if (ret)
 		return ret;
-	}
 
-	// Stick in the "first" commit as we have to do it by hand for some reason (git doesn't like
-	// showing it for us...)
+	// Stick in the "first" commit as we have to do it by hand for some
+	// reason because git doesn't like showing it for us...
 	const char *db_initial_commit_sql = "INSERT INTO commits (id, release, mainline) VALUES ('1da177e4c3f41524e886b7f1b8a0c1fc7321cac2', '2.6.12', 1);";
 	ret = sqlite3_exec(database, db_initial_commit_sql, 0, 0, &error);
 	if (ret != SQLITE_OK) {
@@ -371,22 +360,34 @@ static int commits_table_init(void)
 
 static int fixes_table_init(void)
 {
+	return create_table("fixes", db_create_fixes_sql);
+}
+
+static int version_table_init(void)
+{
 	char *error;
 	int ret;
 
-	/* Create the releases table */
-	ret = sqlite3_exec(database, db_create_fixes_sql, 0, 0, &error);
+	ret = create_table("version", db_create_version_sql);
+	if (ret)
+		return ret;
+
+	// Write the program version to the database.
+	const char *db_initial_commit_sql = "INSERT INTO version (version) VALUES ('"VERSION"');";
+	ret = sqlite3_exec(database, db_initial_commit_sql, 0, 0, &error);
 	if (ret != SQLITE_OK) {
-		fprintf(stderr, "Error creating release table %s %s\n",
-			database_name, error);
+		fprintf(stderr, "Error '%s' adding version to database %s\n",
+			error, database_name);
 		sqlite3_free(error);
 		sqlite3_close(database);
 		return ret;
 	}
 
 	sqlite3_free(error);
+
 	return ret;
 }
+
 
 int db_init(void)
 {
@@ -405,6 +406,10 @@ int db_init(void)
 		return ret;
 
 	ret = fixes_table_init();
+	if (ret)
+		return ret;
+
+	ret = version_table_init();
 	if (ret)
 		return ret;
 
