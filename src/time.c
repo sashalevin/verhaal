@@ -54,6 +54,7 @@ double time_stop(struct vh_timestamp *start)
 		  ((double)start->tv.tv_sec + (1.0e-9 * start->tv.tv_nsec));
 
 	//printf("%s: %.5f seconds\n", start->name, seconds);
+	free(start->name);
 	free(start);
 	return seconds;
 }
