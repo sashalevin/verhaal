@@ -29,13 +29,15 @@
 #include "verhaal.h"
 #include "terminal.h"
 
+/* A specific commit */
 struct commit {
-	struct list_head node;
-	char *id;
+	struct list_node node;
+	char *sha;
 	char *release;
 	char *mainline_id;
 	char *reverts;
 	char *fixes;
+	int mainline;
 };
 
 git_repository *git_repo;
@@ -231,6 +233,30 @@ static char *find_fixes(const char *message)
 	}
 	return final;
 }
+static void create_commit(struct version_range *vr,
+			  const char *sha, const char *release, int mainline,
+			  const char *mainline_id, const char *reverts, const char *fixes)
+{
+	struct commit *c = calloc(1, sizeof(*c));
+
+	if (!c) {
+		fprintf(stderr, "Out of memory, aborting!\n");
+		exit(1);
+	}
+
+	c->sha = strdup(sha);
+	c->release = strdup(release);
+	if (mainline_id)
+		c->mainline_id = strdup(mainline_id);
+	if (reverts)
+		c->reverts = strdup(reverts);
+	if (fixes)
+		c->fixes = strdup(fixes);
+	c->mainline = mainline;
+	list_node_init(&c->node);
+
+	list_add(&vr->commits, &c->node);
+}
 
 static int create_kernel_range(struct version_range *vr)
 {
@@ -327,10 +353,10 @@ static int create_kernel_range(struct version_range *vr)
 
 		git_commit_free(commit);
 
-		// Save it in the database
-		ret = db_commit_add(sha, end, mainline_int, upstream, reverts, fixes);
-		if (ret)
-			goto exit;
+		// Save the commit off in the list of commits for this range
+		create_commit(vr, sha, end, mainline_int, upstream, reverts, fixes);
+
+		// Racy...
 		num_commits++;
 
 		if (upstream)
@@ -342,12 +368,49 @@ static int create_kernel_range(struct version_range *vr)
 	}
 	ret = 0;
 
-exit:
 	git_revwalk_free(walker);
 	terminal_fprintf(stdout, TERMINAL_RESTORE_CURSOR);
 	fflush(stdout);
 	return ret;
 }
+
+static int save_commits(struct version_range *vr)
+{
+	const char *start = vr->from.name;
+	const char *end = vr->to.name;
+	struct commit *c;
+	struct commit *temp;
+	int ret;
+
+	terminal_fprintf(stdout, TERMINAL_SAVE_CURSOR);
+	terminal_fprintf(stdout, "  Saving kernel commits from "
+			 TERMINAL_FG_BLUE "v%s" TERMINAL_FG_DEFAULT " to "
+			 TERMINAL_FG_BLUE "v%s" TERMINAL_FG_DEFAULT "" TERMINAL_CLEAR_RIGHT, start, end);
+	fflush(stdout);
+
+	list_for_each_safe(&vr->commits, c, temp, node) {
+		// Save it in the database
+		ret = db_commit_add(c->sha, c->release, c->mainline, c->mainline_id, c->reverts, c->fixes);
+		if (ret)
+			goto exit;
+		// Free the memory
+		free(c->sha);
+		free(c->release);
+		if (c->mainline_id)
+			free(c->mainline_id);
+		if (c->reverts)
+			free(c->reverts);
+		if (c->fixes)
+			free(c->fixes);
+		list_del(&c->node);
+		free(c);
+	}
+exit:
+	terminal_fprintf(stdout, TERMINAL_RESTORE_CURSOR);
+	fflush(stdout);
+	return 0;
+}
+
 
 static const char *short_options = "Vvhfd:";
 
@@ -486,6 +549,15 @@ int main(int argc, char *argv[])
 			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
 			 " seconds/commit\n", num_commits, seconds,
 			 (seconds / (double)num_commits));
+
+	foo = time_start("save_commits");
+	for_each_range_do(&save_commits);
+	seconds = time_stop(foo);
+	terminal_fprintf(stdout, "\n");
+
+	terminal_fprintf(stdout, "    Saved commits to database in "
+			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
+			 " seconds\n", seconds);
 
 	foo = time_start("git_shutdown");
 	git_shutdown();

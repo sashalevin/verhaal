@@ -7,6 +7,7 @@
 
 #include <stdbool.h>
 #include <git2.h>
+#include "ccan/list/list.h"
 
 #define VERSION_NAME_SIZE	20	// should fit the whole vX.Y.Z string size
 
@@ -23,9 +24,10 @@ struct version {
  * these "ranges" that matter in how we spelunk through git and save git ids
  */
 struct version_range {
-	struct version from;	// git tag start
-	struct version to;	// git tag end
-	bool mainline;		// If this is a "mainline" range
+	struct version from;		// git tag start
+	struct version to;		// git tag end
+	bool mainline;			// If this is a "mainline" range
+	struct list_head commits;	// commits for this range
 };
 
 // db.c

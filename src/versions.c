@@ -91,6 +91,7 @@ static void add_version_range(const char *from, const char *to, bool mainline)
 	strcpy(vr->from.name, from);
 	strcpy(vr->to.name, to);
 	vr->mainline = mainline;
+	list_head_init(&vr->commits);
 
 	//printf("%s: from: %s	to: %s	mainline: %d\n", __func__, from, to, mainline);
 	max_version_range++;
