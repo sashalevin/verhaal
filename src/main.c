@@ -22,6 +22,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <unistd.h>
 #include <getopt.h>
 #include <git2.h>
 #include "ccan/list/list.h"
@@ -509,6 +510,9 @@ int main(int argc, char *argv[])
 	struct vh_timestamp *foo;
 	double seconds;
 	int ret;
+
+//	int nproc = sysconf(_SC_NPROCESSORS_CONF);
+//	printf("nproc = %d\n", nproc);
 
 	terminal_fprintf(stdout, TERMINAL_FG_GREEN "%s" TERMINAL_FG_DEFAULT
 			 " version " TERMINAL_FG_BLUE "%s" TERMINAL_FG_DEFAULT "\n",
