@@ -40,6 +40,8 @@ int db_commit_add(const char *sha, const char *release,
 		  int mainline, const char *mainline_id,
 		  const char *reverts, const char *fixes);
 int db_write_to_disk(void);
+void db_transaction_begin(void);
+void db_transaction_end(void);
 extern char *database_name;
 
 // search.c

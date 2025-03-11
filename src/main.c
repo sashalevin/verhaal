@@ -389,6 +389,7 @@ static int save_commits(struct version_range *vr)
 			 TERMINAL_FG_BLUE "v%s" TERMINAL_FG_DEFAULT "" TERMINAL_CLEAR_RIGHT, start, end);
 	fflush(stdout);
 
+	db_transaction_begin();
 	list_for_each_safe(&vr->commits, c, temp, node) {
 		// Save it in the database
 		ret = db_commit_add(c->sha, c->release, c->mainline, c->mainline_id, c->reverts, c->fixes);
@@ -407,6 +408,7 @@ static int save_commits(struct version_range *vr)
 		free(c);
 	}
 exit:
+	db_transaction_end();
 	terminal_fprintf(stdout, TERMINAL_RESTORE_CURSOR);
 	fflush(stdout);
 	return 0;

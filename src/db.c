@@ -129,6 +129,20 @@ int db_fix_add(const char *invalid, const char *valid)
 	return ret;
 }
 
+void db_transaction_begin(void)
+{
+	char *error;
+
+	sqlite3_exec(database, "BEGIN TRANSACTION", NULL, NULL, &error);
+}
+
+void db_transaction_end(void)
+{
+	char *error;
+
+	sqlite3_exec(database, "END TRANSACTION", NULL, NULL, &error);
+}
+
 static const char *db_insert_sql = "INSERT INTO commits (id, release, mainline, mainline_id, reverts, fixes) VALUES (?, ?, ?, ?, ?, ?);";
 int db_commit_add(const char *sha, const char *release,
 		  int mainline, const char *mainline_id,
