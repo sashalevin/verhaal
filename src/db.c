@@ -24,8 +24,9 @@ static const char *db_create_commits_sql =	"CREATE TABLE IF NOT EXISTS commits "
 						" mainline INTEGER,"			\
 						" mainline_id TEXT,"			\
 						" reverts TEXT,"			\
-						" fixes TEXT);"				\
-						"CREATE INDEX IF NOT EXISTS idx_commits_mainline_id ON commits(mainline_id);"	\
+						" fixes TEXT);";
+
+static const char *db_create_indexes_sql =	"CREATE INDEX IF NOT EXISTS idx_commits_mainline_id ON commits(mainline_id);"	\
 						"CREATE INDEX IF NOT EXISTS idx_commits_reverts ON commits(reverts);"		\
 						"CREATE INDEX IF NOT EXISTS idx_commits_id_mainline ON commits(id, mainline);"	\
 						"CREATE INDEX IF NOT EXISTS idx_commits_release ON commits(release);";
@@ -143,6 +144,25 @@ void db_transaction_end(void)
 	sqlite3_exec(database, "END TRANSACTION", NULL, NULL, &error);
 }
 
+static int create_table(const char *table_name, const char *sql)
+{
+	char *error;
+	int ret;
+
+	/* Create the releases table */
+	ret = sqlite3_exec(database, sql, 0, 0, &error);
+	if (ret != SQLITE_OK) {
+		fprintf(stderr, "Error '%s' when attempting to create table %s in database file %s\n",
+			error, table_name, database_name);
+		sqlite3_free(error);
+		sqlite3_close(database);
+		return ret;
+	}
+
+	sqlite3_free(error);
+	return ret;
+}
+
 static const char *db_insert_sql = "INSERT INTO commits (id, release, mainline, mainline_id, reverts, fixes) VALUES (?, ?, ?, ?, ?, ?);";
 int db_commit_add(const char *sha, const char *release,
 		  int mainline, const char *mainline_id,
@@ -192,6 +212,11 @@ int db_write_to_disk(void)
 	struct vh_timestamp *foo;
 
 	foo = time_start("Write data to disk");
+
+	// Create the indexes when we shutdown so as to make the original inserts go faster
+	ret = create_table("indexes", db_create_indexes_sql);
+	if (ret)
+		fprintf(stderr, "Problem creating indexes");
 
 	terminal_fprintf(stdout, "  Writing to database file '"
 			 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT "'\n", database_name);
@@ -316,26 +341,6 @@ static int database_init(void)
 
 	return ret;
 }
-
-static int create_table(const char *table_name, const char *sql)
-{
-	char *error;
-	int ret;
-
-	/* Create the releases table */
-	ret = sqlite3_exec(database, sql, 0, 0, &error);
-	if (ret != SQLITE_OK) {
-		fprintf(stderr, "Error '%s' when attempting to create table %s in database file %s\n",
-			error, table_name, database_name);
-		sqlite3_free(error);
-		sqlite3_close(database);
-		return ret;
-	}
-
-	sqlite3_free(error);
-	return ret;
-}
-
 
 static int releases_table_init(void)
 {
