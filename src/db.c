@@ -15,6 +15,8 @@
 
 char *database_name;
 
+#define SCHEMA_VERSION	"001"		// Bump this if the schema changes
+
 // We have a PRIMARY KEY although it is probably not needed because git ensures us of this anyway...
 // FIXME, make release a foreign key to the releases table:
 //	https://www.sqlite.org/foreignkeys.html
@@ -41,7 +43,8 @@ static const char *db_create_ranges_sql =	"CREATE TABLE IF NOT EXISTS ranges "	\
 						 " mainline INTEGER);";
 
 static const char *db_create_version_sql =	"CREATE TABLE IF NOT EXISTS version "	\
-						 "(version TEXT NOT NULL);";
+						 "(verhaal_version TEXT NOT NULL, "	\
+						 " schema_version TEXT NOT NULL);";
 
 // FIXME, make sha_valid a foreign key to the commits table:
 //	https://www.sqlite.org/foreignkeys.html
@@ -392,7 +395,8 @@ static int version_table_init(void)
 		return ret;
 
 	// Write the program version to the database.
-	const char *db_initial_commit_sql = "INSERT INTO version (version) VALUES ('"VERSION"');";
+	const char *db_initial_commit_sql = "INSERT INTO version (verhaal_version, schema_version) "
+					    "VALUES ('"VERSION"', '"SCHEMA_VERSION"');";
 	ret = sqlite3_exec(database, db_initial_commit_sql, 0, 0, &error);
 	if (ret != SQLITE_OK) {
 		fprintf(stderr, "Error '%s' adding version to database %s\n",
