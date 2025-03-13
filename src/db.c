@@ -307,7 +307,7 @@ static int db_read_from_disk(void)
 }
 #endif
 
-static int database_init(void)
+static int database_create(void)
 {
 	char *error;
 	int ret;
@@ -343,6 +343,102 @@ static int database_init(void)
 	}
 
 	return ret;
+}
+
+static int version_callback(void *data, int argc, char **argv, char **column_name)
+{
+	const char *version;
+	const char *schema;
+
+	if (argc != 2) {
+		terminal_fprintf(stdout, "    Database file '"
+				 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT
+				 "' does not have the correct size of the versions table, creating a new one...\n",
+				 database_name);
+		return -1;
+	}
+
+	version = argv[0];
+	schema = argv[1];
+
+	if (strcmp(schema, SCHEMA_VERSION)) {
+		terminal_fprintf(stdout, "    Database contains schema '"
+				 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT
+				 "' which does not match our current schema version '"
+				 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT
+				 "' so starting over...\n", schema, SCHEMA_VERSION);
+		return -1;
+	}
+	terminal_fprintf(stdout, "    Database created with version '"
+			 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT
+			 "' but identical schema version '"
+			 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT
+			 "', so all is fine.\n",
+			 version, schema);
+	return 0;
+}
+
+
+static int database_check(void)
+{
+	FILE *db_file;
+	char *error;
+	int ret;
+
+	// Check to see if the database is already here on disk
+	db_file = fopen(database_name, "r");
+	if (!db_file) {
+		// database is not present, so let's start over!
+		terminal_fprintf(stdout, "    Database file '"
+				 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT
+				 " is not found, creating a new one...\n",
+				 database_name);
+		return -1;
+	}
+	fclose(db_file);
+
+	// File is present, so let's open it and do some checks...
+	ret = sqlite3_open(database_name, &database);
+	if (ret != SQLITE_OK) {
+		terminal_fprintf(stdout, "    Database file '"
+				 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT
+				 " does not seem to be a valid database at all, creating a new one...\n",
+				 database_name);
+		return ret;
+	}
+
+	// Seems like a valid database, so let's see if the version table is present and if so check
+	// the schema.
+	const char *db_check_versions_sql = "SELECT * from version;";
+	ret = sqlite3_exec(database, db_check_versions_sql, version_callback, 0, &error);
+	if (ret != SQLITE_OK) {
+		// Query did not work, so versions table is not there, so let's close this and
+		// create a new one
+		sqlite3_free(error);
+		sqlite3_close(database);
+		return ret;
+	}
+
+	// Let's keep failing this for now, we can't handle a setup db just yet...
+	sqlite3_close(database);
+
+	// Return an error, the database needs to be created from scratch
+	return -1;
+}
+
+static int database_init(void)
+{
+	int ret;
+
+	// Check to see if the database is already here and if so, set up the proper pointers
+	ret = database_check();
+	if (!ret)
+		return ret;
+
+	terminal_fprintf(stdout, "    Creating database from scratch, sorry for the delay...\n");
+
+	// Database check failed, so let's build it all from scratch!
+	return database_create();
 }
 
 static int releases_table_init(void)
