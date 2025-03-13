@@ -13,8 +13,9 @@
 
 /* A specific version, and if it is in mainline or not */
 struct version {
-	char name[VERSION_NAME_SIZE];
-	bool mainline;
+	char name[VERSION_NAME_SIZE];	// name
+	bool mainline;			// If this is a "mainline" version
+	bool new;			// Not in the database yet
 };
 
 /*
@@ -27,13 +28,14 @@ struct version_range {
 	struct version from;		// git tag start
 	struct version to;		// git tag end
 	bool mainline;			// If this is a "mainline" range
+	bool new;			// Not in the database yet
 	struct list_head commits;	// commits for this range
 };
 
 // db.c
 int db_init(void);
 void db_shutdown(void);
-int db_release_add(const char *release, int mainline);
+int db_release_add(const struct version *v);
 int db_range_add(const char *from, const char *to, int mainline);
 int db_fix_add(const char *invalid, const char *valid);
 int db_commit_add(const char *sha, const char *release,
@@ -53,6 +55,7 @@ struct vh_timestamp *time_start(const char *name);
 double time_stop(struct vh_timestamp *time);
 
 // versions.c
+void version_add(const char *version, bool mainline);
 void versions_create(void);
 void for_each_range_do(int (*do_it_function)(struct version_range *vr));
 

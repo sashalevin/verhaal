@@ -55,10 +55,16 @@ static const char *db_create_fixes_sql =	"CREATE TABLE IF NOT EXISTS fixes "	\
 static struct sqlite3 *database;
 
 static const char *db_insert_release_sql = "INSERT INTO releases (release, mainline) VALUES (?, ?);";
-int db_release_add(const char *release, int mainline)
+int db_release_add(const struct version *v)
 {
+	const char *release = v->name;
+	int mainline = v->mainline;
 	sqlite3_stmt *sql_stmt = NULL;
 	int ret;
+
+	// Don't add an "old" version to the database
+	if (v->new == false)
+		return 0;
 
 	dbg("%s: %10s mainline=%d\n", __func__, release, mainline);
 
@@ -345,6 +351,59 @@ static int database_create(void)
 	return ret;
 }
 
+static int releases_callback(void *data, int argc, char **argv, char **column_name)
+{
+	const char *release;
+	const char *mainline;
+	bool mainline_bool;
+
+	if (argc != 2) {
+		terminal_fprintf(stdout, "    Database file '"
+				 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT
+				 "' does not have the correct size of the releases table, creating a new one...\n",
+				 database_name);
+		return -1;
+	}
+
+	release = argv[0];
+	mainline = argv[1];
+
+	//printf("%s: release='%s'	mainline='%s'\n", __func__, release, mainline);
+	if (!strcmp(mainline, "0"))
+		mainline_bool = false;
+	else
+		mainline_bool = true;
+
+	// Add this to memory.  It will NOT be written back to the database because the ->new flag
+	// will not be set, so all is good.
+	version_add(release, mainline_bool);
+	return 0;
+}
+
+static int db_read_versions(void)
+{
+	int ret;
+	char *error;
+
+	const char *db_check_versions_sql = "SELECT * from releases;";
+	ret = sqlite3_exec(database, db_check_versions_sql, releases_callback, 0, &error);
+	if (ret != SQLITE_OK) {
+		// Query did not work, so versions table is not there, so let's close this and
+		// create a new one
+		sqlite3_free(error);
+		sqlite3_close(database);
+		return ret;
+	}
+
+	return 0;
+
+}
+
+static int db_read_ranges(void)
+{
+	return 0;
+}
+
 static int version_callback(void *data, int argc, char **argv, char **column_name)
 {
 	const char *version;
@@ -377,7 +436,6 @@ static int version_callback(void *data, int argc, char **argv, char **column_nam
 			 version, schema);
 	return 0;
 }
-
 
 static int database_check(void)
 {
@@ -418,6 +476,12 @@ static int database_check(void)
 		sqlite3_close(database);
 		return ret;
 	}
+
+	// Good schema!  So we can "know" that the tables and indexes are set up properly, so let's
+	// read in the ranges that we currently have so we can "prepopulate" that information so we
+	// only know what new versions and ranges we need to care about
+	db_read_versions();
+	db_read_ranges();
 
 	// Let's keep failing this for now, we can't handle a setup db just yet...
 	sqlite3_close(database);

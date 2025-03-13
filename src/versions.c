@@ -27,9 +27,16 @@
  */
 static struct version version_array[NUM_VERSIONS];
 static int max_version;
+static int new_versions;
 
 static struct version_range version_range_array[NUM_VERSIONS];
 static int max_version_range;
+static int new_ranges;
+
+// "Flag" to flip when we go from reading the information from the db to creating it from the git
+// tree itself.  We use this to "know" if a version/range is new and we need to parse it from git
+// and write that out to the disk
+static bool new_version_flag;
 
 static bool is_valid_release(const char *version)
 {
@@ -43,12 +50,38 @@ static bool is_valid_release(const char *version)
 	return true;
 }
 
-static void add_version(const char *version, bool mainline)
+// Simple "is this version in our table or not
+// Odds are it can be sped up, but really, it's a simple array read of memory, cpus do that fast
+// these days...
+static const struct version *find_version(const char *version)
+{
+	const struct version *v;
+	int i;
+
+	for (i = 0; i < max_version; ++i) {
+		v = &version_array[i];
+		if (!strcmp(version, v->name))
+			return v;
+	}
+	return NULL;
+}
+
+void version_add(const char *version, bool mainline)
 {
 	struct version *v = &version_array[max_version];
 
+	// Skip if we have seen this version already
+	if (find_version(version))
+		return;
+
 	strcpy(v->name, version);
 	v->mainline = mainline;
+	v->new = new_version_flag;
+
+	if (new_version_flag) {
+		dbg("%s: new version %s	%d\n", __func__, version, mainline);
+		new_versions++;
+	}
 
 	//printf("%d	%s	%d\n", max_version, version, mainline);
 	max_version++;
@@ -58,22 +91,42 @@ static void add_version(const char *version, bool mainline)
 	}
 
 	// Add the version to the database
-	db_release_add(version, mainline);
+	db_release_add(v);
 }
 
 static void add_version_major(const char *version)
 {
-	add_version(version, true);
+	version_add(version, true);
 }
 
 static void add_version_minor(const char *version)
 {
-	add_version(version, false);
+	version_add(version, false);
+}
+
+// Simple "is this version in our table or not
+// Odds are it can be sped up, but really, it's a simple array read of memory, cpus do that fast
+// these days...
+static const struct version_range *find_version_range(const char *from, const char *to)
+{
+	const struct version_range *vr;
+	int i;
+
+	for (i = 0; i < max_version_range; ++i) {
+		vr = &version_range_array[i];
+		if ((!strcmp(from, vr->from.name)) && (!strcmp(to, vr->to.name)))
+			return vr;
+	}
+	return NULL;
 }
 
 static void add_version_range(const char *from, const char *to, bool mainline)
 {
 	struct version_range *vr = &version_range_array[max_version_range];
+
+	// Skip if we have seen this version range already
+	if (find_version_range(from, to))
+		return;
 
 	// Let's first see if these are a few "known" ranges that we know we can
 	// never find, thanks to the start of the git repo and how the first few
@@ -91,7 +144,13 @@ static void add_version_range(const char *from, const char *to, bool mainline)
 	strcpy(vr->from.name, from);
 	strcpy(vr->to.name, to);
 	vr->mainline = mainline;
+	vr->new = new_version_flag;
 	list_head_init(&vr->commits);
+
+	if (new_version_flag) {
+		dbg("%s: new release %s	%s	%d\n", __func__, from, to, mainline);
+		new_ranges++;
+	}
 
 	//printf("%s: from: %s	to: %s	mainline: %d\n", __func__, from, to, mainline);
 	max_version_range++;
@@ -440,6 +499,9 @@ void versions_create(void)
 	struct vh_timestamp *foo;
 	double seconds;
 
+	// Set the flag to be true as we are now walking git
+	new_version_flag = true;
+
 	// We do all of this walking twice.
 	//  - First to get all of the valid releases.
 	//  - Second to set up the ranges between those releases (which is where the commits
@@ -461,9 +523,11 @@ void versions_create(void)
 	seconds = time_stop(foo);
 	terminal_fprintf(stdout, "    "
 			 TERMINAL_FG_CYAN "%d" TERMINAL_FG_DEFAULT
-			 " versions created in "
+			 " versions total, "
+			 TERMINAL_FG_CYAN "%d" TERMINAL_FG_DEFAULT
+			 " versions are new, and everything handled in "
 			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
-			 " seconds\n", max_version, seconds);
+			 " seconds\n", max_version, new_versions, seconds);
 
 
 	// Create the ranges
@@ -487,7 +551,9 @@ void versions_create(void)
 	seconds = time_stop(foo);
 	terminal_fprintf(stdout, "    "
 			 TERMINAL_FG_CYAN "%d" TERMINAL_FG_DEFAULT
-			 " version ranges created in "
+			 " version ranges total, "
+			 TERMINAL_FG_CYAN "%d" TERMINAL_FG_DEFAULT
+			 " ranges are new, and everything handled in "
 			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
-			 " seconds\n", max_version_range, seconds);
+			 " seconds\n", max_version_range, new_ranges, seconds);
 }
