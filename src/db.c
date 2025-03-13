@@ -15,6 +15,8 @@
 
 char *database_name;
 
+bool db_is_in_memory;
+
 #define SCHEMA_VERSION	"001"		// Bump this if the schema changes
 
 // We have a PRIMARY KEY although it is probably not needed because git ensures us of this anyway...
@@ -87,10 +89,17 @@ int db_release_add(const struct version *v)
 }
 
 static const char *db_insert_range_sql = "INSERT INTO ranges (version_from, version_to, mainline) VALUES (?, ?, ?);";
-int db_range_add(const char *from, const char *to, int mainline)
+int db_range_add(const struct version_range *vr)
 {
+	const char *from = vr->from.name;
+	const char *to = vr->to.name;
+	int mainline = vr->mainline;
 	sqlite3_stmt *sql_stmt = NULL;
 	int ret;
+
+	// Don't add an "old" version to the database
+	if (vr->new == false)
+		return 0;
 
 	dbg("%s: %10s %10s mainline=%d\n", __func__, from, to, mainline);
 
@@ -327,6 +336,7 @@ static int database_create(void)
 		sqlite3_close(database);
 		return ret;
 	}
+	db_is_in_memory = true;
 
 	// Configure SQLite for "optimal" performance
 	const char *pragmas[] = {
@@ -396,11 +406,54 @@ static int db_read_versions(void)
 	}
 
 	return 0;
+}
 
+static int ranges_callback(void *data, int argc, char **argv, char **column_name)
+{
+	const char *from;
+	const char *to;
+	const char *mainline;
+	bool mainline_bool;
+
+	if (argc != 3) {
+		terminal_fprintf(stdout, "    Database file '"
+				 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT
+				 "' does not have the correct size of the ranges table, creating a new one...\n",
+				 database_name);
+		return -1;
+	}
+
+	from = argv[0];
+	to = argv[1];
+	mainline = argv[2];
+
+	// printf("%s: from='%s'	to='%s'	mainline='%s'\n", __func__, from, to, mainline);
+	if (!strcmp(mainline, "0"))
+		mainline_bool = false;
+	else
+		mainline_bool = true;
+
+	// Add this to memory.  It will NOT be written back to the database because the ->new flag
+	// will not be set, so all is good.
+	version_range_add(from, to, mainline_bool);
+	return 0;
 }
 
 static int db_read_ranges(void)
 {
+	int ret;
+	char *error;
+
+	const char *db_check_versions_sql = "SELECT * from ranges;";
+	ret = sqlite3_exec(database, db_check_versions_sql, ranges_callback, 0, &error);
+	if (ret != SQLITE_OK) {
+		// Query did not work, so versions table is not there, so let's close this and
+		// create a new one
+		sqlite3_free(error);
+		sqlite3_close(database);
+		return ret;
+	}
+
 	return 0;
 }
 
@@ -483,11 +536,8 @@ static int database_check(void)
 	db_read_versions();
 	db_read_ranges();
 
-	// Let's keep failing this for now, we can't handle a setup db just yet...
-	sqlite3_close(database);
-
-	// Return an error, the database needs to be created from scratch
-	return -1;
+	// Return success so we just keep what we have on the disk
+	return 0;
 }
 
 static int database_init(void)
@@ -571,7 +621,6 @@ static int version_table_init(void)
 	return ret;
 }
 
-
 int db_init(void)
 {
 	int ret;
@@ -579,6 +628,10 @@ int db_init(void)
 	ret = database_init();
 	if (ret)
 		return ret;
+
+	// If this is on disk, no need to initialize anything else as it's all good
+	if (!db_is_in_memory)
+		return 0;
 
 	ret = releases_table_init();
 	if (ret)
@@ -601,6 +654,8 @@ int db_init(void)
 
 void db_shutdown(void)
 {
+	if (db_is_in_memory)
+		db_write_to_disk();
 	sqlite3_close(database);
 }
 

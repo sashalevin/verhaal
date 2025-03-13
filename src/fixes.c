@@ -74,6 +74,10 @@ void fixes_init(void)
 	size_t read;
 	char *buffer;
 
+	// No need to re-parse the fixes stuff if we are not doing this "from scratch"
+	if (!db_is_in_memory)
+		return;
+
 	foo = time_start(__func__);
 
 	fixes_file = fopen(FIXES_FILE, "r");

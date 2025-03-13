@@ -36,7 +36,7 @@ struct version_range {
 int db_init(void);
 void db_shutdown(void);
 int db_release_add(const struct version *v);
-int db_range_add(const char *from, const char *to, int mainline);
+int db_range_add(const struct version_range *vr);
 int db_fix_add(const char *invalid, const char *valid);
 int db_commit_add(const char *sha, const char *release,
 		  int mainline, const char *mainline_id,
@@ -45,6 +45,7 @@ int db_write_to_disk(void);
 void db_transaction_begin(void);
 void db_transaction_end(void);
 extern char *database_name;
+extern bool db_is_in_memory;
 
 // search.c
 char *search_string(const char *string, const char *pattern);
@@ -56,8 +57,10 @@ double time_stop(struct vh_timestamp *time);
 
 // versions.c
 void version_add(const char *version, bool mainline);
+void version_range_add(const char *from, const char *to, bool mainline);
 void versions_create(void);
 void for_each_range_do(int (*do_it_function)(struct version_range *vr));
+extern int new_ranges;
 
 // fixes.c
 void fixes_init(void);

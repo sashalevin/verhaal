@@ -31,7 +31,7 @@ static int new_versions;
 
 static struct version_range version_range_array[NUM_VERSIONS];
 static int max_version_range;
-static int new_ranges;
+int new_ranges;
 
 // "Flag" to flip when we go from reading the information from the db to creating it from the git
 // tree itself.  We use this to "know" if a version/range is new and we need to parse it from git
@@ -120,7 +120,7 @@ static const struct version_range *find_version_range(const char *from, const ch
 	return NULL;
 }
 
-static void add_version_range(const char *from, const char *to, bool mainline)
+void version_range_add(const char *from, const char *to, bool mainline)
 {
 	struct version_range *vr = &version_range_array[max_version_range];
 
@@ -155,17 +155,17 @@ static void add_version_range(const char *from, const char *to, bool mainline)
 	//printf("%s: from: %s	to: %s	mainline: %d\n", __func__, from, to, mainline);
 	max_version_range++;
 
-	db_range_add(from, to, mainline);
+	db_range_add(vr);
 }
 
 static void add_version_range_major(const char *major, const char *minor)
 {
-	add_version_range(major, minor, true);
+	version_range_add(major, minor, true);
 }
 
 static void add_version_range_minor(const char *major, const char *minor)
 {
-	add_version_range(major, minor, false);
+	version_range_add(major, minor, false);
 }
 
 void for_each_range_do(int (*do_it_function)(struct version_range *vr))
@@ -492,7 +492,6 @@ exit:
 	free(head_tag);
 	return 0;
 }
-
 
 void versions_create(void)
 {

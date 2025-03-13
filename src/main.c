@@ -234,6 +234,7 @@ static char *find_fixes(const char *message)
 	}
 	return final;
 }
+
 static void create_commit(struct version_range *vr,
 			  const char *sha, const char *release, int mainline,
 			  const char *mainline_id, const char *reverts, const char *fixes)
@@ -271,6 +272,10 @@ static int create_kernel_range(struct version_range *vr)
 	git_revwalk *walker;
 	int ret;
 	int mainline_int;
+
+	// Only save "new" version ranges
+	if (!vr->new)
+		return 0;
 
 	// Set "is this mainline or not" flag to be stored later
 	if (vr->mainline)
@@ -382,6 +387,10 @@ static int save_commits(struct version_range *vr)
 	struct commit *c;
 	struct commit *temp;
 	int ret;
+
+	// Only save "new" version ranges
+	if (!vr->new)
+		return 0;
 
 	terminal_fprintf(stdout, TERMINAL_SAVE_CURSOR);
 	terminal_fprintf(stdout, "  Saving kernel commits from "
@@ -531,15 +540,21 @@ int main(int argc, char *argv[])
 
 	ret = db_init();
 	if (ret)
-		goto exit;
+		goto error_exit;
 
 	ret = git_init();
 	if (ret)
-		goto exit;
+		goto error_exit;
 
 	versions_create();
 
 	fixes_init();
+
+	if (new_ranges == 0) {
+		// Nothing new to do!
+		terminal_fprintf(stdout, "    No new ranges to process!\n");
+		goto exit;
+	}
 
 	foo = time_start("process_commits");
 	for_each_range_do(&create_kernel_range);
@@ -565,6 +580,7 @@ int main(int argc, char *argv[])
 			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
 			 " seconds\n", seconds);
 
+exit:
 	foo = time_start("git_shutdown");
 	git_shutdown();
 	seconds = time_stop(foo);
@@ -572,11 +588,10 @@ int main(int argc, char *argv[])
 			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
 			 " seconds\n", seconds);
 
-	db_write_to_disk();
+	db_shutdown();
 
-exit:
+error_exit:
 	free(database_name);
 	free(git_repo_location);
-	db_shutdown();
 	return ret;
 }
