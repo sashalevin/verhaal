@@ -245,6 +245,7 @@ static void loop_through_x(int major)
 
 static char *get_head_tag(void)
 {
+	static bool git_head_tag_print = false;
 	git_describe_result *res;
 	git_object *object;
 	git_reference *ref;
@@ -286,8 +287,12 @@ static char *get_head_tag(void)
 	if (ret)
 		fprintf(stderr, "git_describe_format() failed: %d\n", ret);
 
-	terminal_fprintf(stdout, "    git head tag = " TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT "\n",
-			 buf.ptr);
+	// Only print this out once.
+	if (!git_head_tag_print) {
+		terminal_fprintf(stdout, "    git head tag = " TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT "\n",
+				 buf.ptr);
+		git_head_tag_print = true;
+	}
 
 	head_tag = strdup(buf.ptr);
 
