@@ -518,12 +518,15 @@ static int get_options(int argc, char *argv[])
 
 int main(int argc, char *argv[])
 {
+	struct vh_timestamp *main_time;
 	struct vh_timestamp *foo;
 	double seconds;
 	int ret;
 
 //	int nproc = sysconf(_SC_NPROCESSORS_CONF);
 //	printf("nproc = %d\n", nproc);
+
+	main_time = time_start("main");
 
 	terminal_fprintf(stdout, TERMINAL_FG_GREEN "%s" TERMINAL_FG_DEFAULT
 			 " version " TERMINAL_FG_BLUE "%s" TERMINAL_FG_DEFAULT "\n",
@@ -589,6 +592,11 @@ exit:
 			 " seconds\n", seconds);
 
 	db_shutdown();
+
+	seconds = time_stop(main_time);
+	terminal_fprintf(stdout, "  verhaal completed in "
+			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
+			 " seconds.\n", seconds);
 
 error_exit:
 	free(database_name);
