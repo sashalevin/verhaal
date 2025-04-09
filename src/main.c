@@ -555,7 +555,9 @@ int main(int argc, char *argv[])
 
 	if (new_ranges == 0) {
 		// Nothing new to do!
-		terminal_fprintf(stdout, "    No new ranges to process!\n");
+		terminal_fprintf(stdout, "    "
+				 TERMINAL_FG_GREEN "No new ranges to process!"
+				 TERMINAL_FG_DEFAULT "\n");
 		goto exit;
 	}
 
@@ -591,7 +593,13 @@ exit:
 			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
 			 " seconds\n", seconds);
 
+	foo = time_start("db_shutdown");
 	db_shutdown();
+	seconds = time_stop(foo);
+	terminal_fprintf(stdout, "    Database shutdown/flush took "
+			 TERMINAL_FG_CYAN "%.5f" TERMINAL_FG_DEFAULT
+			 " seconds\n", seconds);
+
 
 	seconds = time_stop(main_time);
 	terminal_fprintf(stdout, "  verhaal completed in "
