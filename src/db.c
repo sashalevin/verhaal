@@ -33,7 +33,11 @@ static const char *db_create_commits_sql =	"CREATE TABLE IF NOT EXISTS commits "
 static const char *db_create_indexes_sql =	"CREATE INDEX IF NOT EXISTS idx_commits_mainline_id ON commits(mainline_id);"	\
 						"CREATE INDEX IF NOT EXISTS idx_commits_reverts ON commits(reverts);"		\
 						"CREATE INDEX IF NOT EXISTS idx_commits_id_mainline ON commits(id, mainline);"	\
-						"CREATE INDEX IF NOT EXISTS idx_commits_release ON commits(release);";
+						"CREATE INDEX IF NOT EXISTS idx_commits_release ON commits(release);"		\
+						/* Optimized for dyad's found_in function */ \
+						"CREATE INDEX IF NOT EXISTS idx_commits_main_query ON commits(mainline_id, reverts, release);" \
+						/* Optimized for get_fixes queries */ \
+						"CREATE INDEX IF NOT EXISTS idx_commits_id_fixes ON commits(id, fixes);";
 
 static const char *db_create_releases_sql =	"CREATE TABLE IF NOT EXISTS releases "	\
 						"(release TEXT PRIMARY KEY NOT NULL, "	\
