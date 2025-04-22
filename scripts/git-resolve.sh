@@ -1,16 +1,14 @@
 #!/bin/bash
-# SPDX-License-Identifier: GPL-2.0-only
-# Copyright 2024 Sasha Levin <sashal@kernel.org>
 
 usage() {
 	echo "Usage: $(basename "$0") [--selftest] [--force] <commit-id> [commit-subject]"
-	echo "Disambiguates a short git commit ID to its full SHA-1 hash."
+	echo "Resolves a short git commit ID to its full SHA-1 hash, particularly useful for fixing references in commit messages."
 	echo ""
 	echo "Arguments:"
-	echo "  --selftest	  Run self-tests"
-	echo "  --force		 Try to find commit by subject if ID lookup fails"
-	echo "  commit-id	   Short git commit ID to disambiguate"
-	echo "  commit-subject  Optional commit subject to help disambiguate between multiple matches"
+	echo "  --selftest      Run self-tests"
+	echo "  --force         Try to find commit by subject if ID lookup fails"
+	echo "  commit-id       Short git commit ID to resolve"
+	echo "  commit-subject  Optional commit subject to help resolve between multiple matches"
 	exit 1
 }
 
@@ -27,7 +25,7 @@ convert_to_grep_pattern() {
 	echo "^${escaped_subject}$"
 }
 
-git_full_id() {
+git_resolve_commit() {
 	local force=0
 	if [ "$1" = "--force" ]; then
 		force=1
@@ -144,7 +142,7 @@ run_selftest() {
 	for i in "${!test_cases[@]}"; do
 		# Capture both output and exit code
 		local result
-		result=$(git_full_id ${test_cases[$i]})  # Removed quotes to allow --force to be parsed
+		result=$(git_resolve_commit ${test_cases[$i]})  # Removed quotes to allow --force to be parsed
 		local exit_code=$?
 
 		# Check both output and exit code
@@ -191,11 +189,11 @@ fi
 # Skip validation in force mode
 if [ -z "$force" ]; then
 	# Validate that the first argument matches at least one git commit
-	if [ $(git rev-parse --disambiguate="$1" 2>/dev/null | wc -l) -eq 0 ]; then
+	if [ "$(git rev-parse --disambiguate="$1" 2>/dev/null | wc -l)" -eq 0 ]; then
 		echo "Error: '$1' does not match any git commit"
 		exit 1
 	fi
 fi
 
-git_full_id $force "$@"
+git_resolve_commit $force "$@"
 exit $?
