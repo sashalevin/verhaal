@@ -112,16 +112,48 @@ static char *find_upstream(const char *message)
 	return sha1;
 }
 
+// Turn a "short" SHA1 into a "full" SHA1 if it is present in the git tree
+static char *sha1_expand(char *sha1_short)
+{
+	git_revspec revspec;
+	const git_oid *oid;
+	char *sha1;
+
+	int ret = git_revparse(&revspec, git_repo, sha1_short);
+
+	if (ret) {
+		// short sha1 was not in the tree, return NULL
+		return NULL;
+	}
+
+	// Turn the git oid into a full sha1
+	oid = git_object_id(revspec.from);
+	sha1 = malloc(100);
+	git_oid_tostr(sha1, 100, oid);
+	dbg("		short sha1: %s, expanded sha1: %s\n", sha1_short, sha1);
+
+	git_object_free(revspec.from);
+	git_object_free(revspec.to);
+	return sha1;
+}
+
 static char *find_reverts(const char *message)
 {
 	char *reverts;
-	char *sha1;
+	char *sha1 = NULL;
+	char *sha1_short;
 
 	reverts = search_string(message, ".*reverts.*\n?");
 	if (!reverts)
 		return NULL;
-	sha1 = find_sha1_full(reverts);
+	sha1_short = find_sha1_short(reverts);
 	free(reverts);
+
+	if (sha1_short) {
+		sha1 = sha1_expand(sha1_short);
+		free(sha1_short);
+	}
+
 	return sha1;
 }
 
@@ -139,7 +171,7 @@ static char *find_fix(const char *line)
 	return sha1;
 }
 
-// Turn a "short" Fixes SHA1 into a "full" SHA1 if it is present in the git tree
+// Turn a "short" Fixes line into a full SHA1 if it is present in the git tree
 static char *fixes_expand(char *fix, const char *line)
 {
 	git_revspec revspec;
