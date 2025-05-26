@@ -315,7 +315,7 @@ static int loop_through_rc(void)
 	// If there is no "-rc" in the head, then nothing to do!
 	char *rc = strstr(head_tag, "-rc");
 	if (rc == NULL) {
-		fprintf(stdout, "At a main release, no -rc release to generate.\n");
+		dbg("At a main release, no -rc release to generate.\n");
 		goto exit;
 	}
 
@@ -457,7 +457,7 @@ static int add_version_range_rc(void)
 	// If there is no "-rc" in the head, then nothing to do!
 	char *rc = strstr(head_tag, "-rc");
 	if (rc == NULL) {
-		fprintf(stdout, "At a main release, no -rc release to generate.\n");
+		dbg("At a main release, no -rc release to generate.\n");
 		goto exit;
 	}
 
