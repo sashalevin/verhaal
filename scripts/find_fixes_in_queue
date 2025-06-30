@@ -8,10 +8,10 @@
 #
 
 STABLE_QUEUE="/home/gregkh/linux/stable/stable-queue/"
-DB="/home/gregkh/src/verhaal/verhaal.db"
 
 REAL_SCRIPT=$(realpath -e "${BASH_SOURCE[0]}")
 SCRIPT_TOP="${SCRIPT_TOP:-$(dirname "${REAL_SCRIPT}")}"
+DB="${SCRIPT_TOP}/../verhaal.db"
 
 # Initialize our color variables if we are a normal terminal
 if [[ -t 1 ]]; then
