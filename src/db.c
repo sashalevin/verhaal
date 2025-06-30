@@ -487,7 +487,7 @@ static int version_callback(void *data, int argc, char **argv, char **column_nam
 	}
 	terminal_fprintf(stdout, "    Database created with version '"
 			 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT
-			 "' but identical schema version '"
+			 "' with identical schema version '"
 			 TERMINAL_FG_CYAN "%s" TERMINAL_FG_DEFAULT
 			 "', so all is fine.\n",
 			 version, schema);
