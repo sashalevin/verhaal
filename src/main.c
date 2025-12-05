@@ -238,7 +238,10 @@ static char *find_fixes(const char *message)
 	// and then feed that to find_fix and build up a string of sha1
 	// values as a "fixes" line
 	char *local_message = strdup(message);
-	char *line = strtok(local_message, "\n");
+	char *saveptr = NULL;
+	// Use strtok_r as we'll eventually parse commits from multiple threads;
+	// the non-reentrant strtok() would share state across workers.
+	char *line = strtok_r(local_message, "\n", &saveptr);
 	while (line) {
 		//fprintf(stdout, "line: '%s'\n", line);
 		char *f = find_fix(line);
@@ -253,7 +256,7 @@ static char *find_fixes(const char *message)
 			strcpy(final, temp);
 			free(f);
 		}
-		line = strtok(NULL, "\n");
+		line = strtok_r(NULL, "\n", &saveptr);
 	}
 	free(local_message);
 	//fprintf(stdout, "final='%s'\n", final);
