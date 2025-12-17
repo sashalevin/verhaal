@@ -68,6 +68,9 @@ char *fix_translate(const char *fix);
 
 // main.c
 extern git_repository *git_repo;
+git_repository *git_repo_get(void);
+void git_repo_set_thread(git_repository *repo);
+void git_repo_clear_thread(void);
 __attribute__((__format__(printf, 1, 2))) int dbg(const char *fmt, ...);
 
 #endif	// __VERHAAL_H__

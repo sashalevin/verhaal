@@ -47,6 +47,7 @@ static const char *database_name_default = DATABASE_NAME;
 static int num_commits;
 
 static bool fixes_print = false;
+static __thread git_repository *thread_git_repo;
 
 // Dumb "only print stuff when greg is debugging the code" function
 static bool debug = false;
@@ -78,6 +79,23 @@ static int git_init(void)
 	}
 
 	return 0;
+}
+
+git_repository *git_repo_get(void)
+{
+	if (thread_git_repo)
+		return thread_git_repo;
+	return git_repo;
+}
+
+void git_repo_set_thread(git_repository *repo)
+{
+	thread_git_repo = repo;
+}
+
+void git_repo_clear_thread(void)
+{
+	thread_git_repo = NULL;
 }
 
 static void git_shutdown(void)
@@ -119,7 +137,7 @@ static char *sha1_expand(char *sha1_short)
 	const git_oid *oid;
 	char *sha1;
 
-	int ret = git_revparse(&revspec, git_repo, sha1_short);
+	int ret = git_revparse(&revspec, git_repo_get(), sha1_short);
 
 	if (ret) {
 		// short sha1 was not in the tree, return NULL
@@ -178,7 +196,7 @@ static char *fixes_expand(char *fix, const char *line)
 	const git_oid *oid;
 	char *sha;
 
-	int ret = git_revparse(&revspec, git_repo, fix);
+	int ret = git_revparse(&revspec, git_repo_get(), fix);
 
 	if (ret) {
 		// Fix sha was not in the git tree, see if it is in our table of "fixup" sha values:
@@ -335,7 +353,7 @@ static int create_kernel_range(struct version_range *vr)
 
 	// Loop through all git ids in this range, take the id and version and store it in the
 	// database
-	ret = git_revwalk_new(&walker, git_repo);
+	ret = git_revwalk_new(&walker, git_repo_get());
 	if (ret) {
 		fprintf(stderr, "Error, can not init a revwalk object\n");
 		return ret;
@@ -365,7 +383,7 @@ static int create_kernel_range(struct version_range *vr)
 		git_oid_tostr(sha, sizeof(sha), &oid);
 
 		// Get the git commit message so we can search it for stuff
-		ret = git_commit_lookup(&commit, git_repo, &oid);
+		ret = git_commit_lookup(&commit, git_repo_get(), &oid);
 		if (ret) {
 			fprintf(stderr, "git message lookup for %s failed\n", sha);
 			continue;

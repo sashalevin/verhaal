@@ -43,7 +43,7 @@ static bool is_valid_release(const char *version)
 	int ret;
 	git_object *obj = NULL;
 
-	ret = git_revparse_single(&obj, git_repo, version);
+	ret = git_revparse_single(&obj, git_repo_get(), version);
 	if (ret)
 		return false;
 	git_object_free(obj);
@@ -260,7 +260,7 @@ static char *get_head_tag(void)
 	// that is in the master branch. "git describe --abbrev=0 master" does what we need.
 
 	// Get the branch description of 'master'
-	ret = git_branch_lookup(&ref, git_repo, "master", GIT_BRANCH_LOCAL);
+	ret = git_branch_lookup(&ref, git_repo_get(), "master", GIT_BRANCH_LOCAL);
 	if (ret)
 		fprintf(stderr, "git_branch_lookup() failed: %d\n", ret);
 
@@ -268,7 +268,7 @@ static char *get_head_tag(void)
 	if (!oid)
 		fprintf(stderr, "git_reference_target() failed\n");
 
-	ret = git_object_lookup(&object, git_repo, oid, GIT_OBJECT_COMMIT);
+	ret = git_object_lookup(&object, git_repo_get(), oid, GIT_OBJECT_COMMIT);
 	if (ret)
 		fprintf(stderr, "git_object_lookup() failed: %d\n", ret);
 
