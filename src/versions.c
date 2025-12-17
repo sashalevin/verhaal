@@ -16,6 +16,10 @@
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
+#include <limits.h>
+#include <pthread.h>
+#include <unistd.h>
 #include <git2.h>
 #include "verhaal.h"
 #include "terminal.h"
@@ -37,6 +41,94 @@ int new_ranges;
 // tree itself.  We use this to "know" if a version/range is new and we need to parse it from git
 // and write that out to the disk
 static bool new_version_flag;
+static bool version_ranges_parallel;
+
+struct range_worker_context {
+	int (*do_it)(struct version_range *vr);
+	int next_index;
+	int error;
+	const struct version_range *failed_vr;
+};
+
+bool version_ranges_parallel_active(void)
+{
+	return version_ranges_parallel;
+}
+
+static int determine_parallel_threads(void)
+{
+	int threads = 0;
+	const char *env = getenv("VERHAAL_THREADS");
+
+	if (env && *env) {
+		char *endptr = NULL;
+		errno = 0;
+		long val = strtol(env, &endptr, 10);
+		if (errno == 0 && endptr && *endptr == '\0' && val > 0 && val <= INT_MAX)
+			threads = (int)val;
+	}
+
+	if (threads <= 0) {
+		long nproc = sysconf(_SC_NPROCESSORS_ONLN);
+		if (nproc > 0 && nproc <= INT_MAX)
+			threads = (int)nproc;
+	}
+
+	if (threads <= 0)
+		threads = 1;
+
+	if (new_ranges > 0 && threads > new_ranges)
+		threads = new_ranges;
+
+	if (threads > max_version_range)
+		threads = max_version_range;
+
+	if (threads < 1)
+		threads = 1;
+
+	return threads;
+}
+
+static void *range_worker(void *data)
+{
+	struct range_worker_context *ctx = data;
+	git_repository *local_repo = NULL;
+	int ret;
+
+	ret = git_repository_open(&local_repo, git_repository_path(git_repo));
+	if (ret) {
+		__sync_bool_compare_and_swap(&ctx->error, 0, ret);
+		return NULL;
+	}
+
+	git_repo_set_thread(local_repo);
+
+	for (;;) {
+		if (__atomic_load_n(&ctx->error, __ATOMIC_RELAXED))
+			break;
+
+		int idx = __atomic_fetch_add(&ctx->next_index, 1, __ATOMIC_RELAXED);
+		if (idx >= max_version_range)
+			break;
+
+		if (__atomic_load_n(&ctx->error, __ATOMIC_RELAXED))
+			break;
+
+		struct version_range *vr = &version_range_array[idx];
+		ret = ctx->do_it(vr);
+		if (ret) {
+			int expected = 0;
+			if (__atomic_compare_exchange_n(&ctx->error, &expected, ret, false,
+							__ATOMIC_RELAXED, __ATOMIC_RELAXED))
+				ctx->failed_vr = vr;
+			break;
+		}
+	}
+
+	git_repo_clear_thread();
+	git_repository_free(local_repo);
+	return NULL;
+}
 
 static bool is_valid_release(const char *version)
 {
@@ -183,6 +275,71 @@ void for_each_range_do(int (*do_it_function)(struct version_range *vr))
 			return;
 		}
 
+	}
+}
+
+void for_each_range_do_parallel(int (*do_it_function)(struct version_range *vr))
+{
+	int threads;
+	struct range_worker_context ctx = {
+		.do_it = do_it_function,
+		.next_index = 0,
+		.error = 0,
+		.failed_vr = NULL,
+	};
+	pthread_t *workers = NULL;
+	int created = 0;
+
+	threads = determine_parallel_threads();
+	if (threads <= 1) {
+		for_each_range_do(do_it_function);
+		return;
+	}
+
+	fprintf(stdout, "  Using %d threads for range processing\n", threads);
+
+	workers = calloc(threads, sizeof(*workers));
+	if (!workers) {
+		fprintf(stderr, "Out of memory, falling back to single-threaded range processing\n");
+		for_each_range_do(do_it_function);
+		return;
+	}
+
+	version_ranges_parallel = true;
+	for (int i = 0; i < threads; ++i) {
+		int ret = pthread_create(&workers[i], NULL, range_worker, &ctx);
+		if (ret) {
+			fprintf(stderr, "pthread_create failed (%d), falling back to single-threaded range processing\n",
+				ret);
+			ctx.error = 0;
+			break;
+		}
+		created++;
+	}
+
+	if (created != threads) {
+		for (int i = 0; i < created; ++i)
+			pthread_join(workers[i], NULL);
+		version_ranges_parallel = false;
+		free(workers);
+		for_each_range_do(do_it_function);
+		return;
+	}
+
+	for (int i = 0; i < threads; ++i)
+		pthread_join(workers[i], NULL);
+
+	version_ranges_parallel = false;
+	free(workers);
+
+	if (ctx.error) {
+		if (ctx.failed_vr)
+			printf("do_it failed for %s, %s, %d\n",
+			       ctx.failed_vr->from.name,
+			       ctx.failed_vr->to.name,
+			       ctx.failed_vr->mainline);
+		else
+			fprintf(stderr, "Parallel range worker failed with error %d\n", ctx.error);
 	}
 }
 

@@ -60,6 +60,8 @@ void version_add(const char *version, bool mainline);
 void version_range_add(const char *from, const char *to, bool mainline);
 void versions_create(void);
 void for_each_range_do(int (*do_it_function)(struct version_range *vr));
+void for_each_range_do_parallel(int (*do_it_function)(struct version_range *vr));
+bool version_ranges_parallel_active(void);
 extern int new_ranges;
 
 // fixes.c

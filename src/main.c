@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <stdarg.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <getopt.h>
 #include <git2.h>
 #include "ccan/list/list.h"
@@ -325,6 +326,7 @@ static int create_kernel_range(struct version_range *vr)
 	git_revwalk *walker;
 	int ret;
 	int mainline_int;
+	bool show_progress = !version_ranges_parallel_active();
 
 	// Only save "new" version ranges
 	if (!vr->new)
@@ -368,11 +370,14 @@ static int create_kernel_range(struct version_range *vr)
 		return ret;
 	}
 
-	terminal_fprintf(stdout, TERMINAL_SAVE_CURSOR);
-	terminal_fprintf(stdout, "  Processing kernel commits from "
-			 TERMINAL_FG_BLUE "v%s" TERMINAL_FG_DEFAULT " to "
-			 TERMINAL_FG_BLUE "v%s" TERMINAL_FG_DEFAULT "" TERMINAL_CLEAR_RIGHT, start, end);
-	fflush(stdout);
+	if (show_progress) {
+		terminal_fprintf(stdout, TERMINAL_SAVE_CURSOR);
+		terminal_fprintf(stdout, "  Processing kernel commits from "
+				 TERMINAL_FG_BLUE "v%s" TERMINAL_FG_DEFAULT " to "
+				 TERMINAL_FG_BLUE "v%s" TERMINAL_FG_DEFAULT "" TERMINAL_CLEAR_RIGHT,
+				 start, end);
+		fflush(stdout);
+	}
 
 	while (!git_revwalk_next(&oid, walker)) {
 		char sha[256];
@@ -415,8 +420,7 @@ static int create_kernel_range(struct version_range *vr)
 		// Save the commit off in the list of commits for this range
 		create_commit(vr, sha, end, mainline_int, upstream, reverts, fixes);
 
-		// Racy...
-		num_commits++;
+		__sync_fetch_and_add(&num_commits, 1);
 
 		if (upstream)
 			free(upstream);
@@ -428,8 +432,10 @@ static int create_kernel_range(struct version_range *vr)
 	ret = 0;
 
 	git_revwalk_free(walker);
-	terminal_fprintf(stdout, TERMINAL_RESTORE_CURSOR);
-	fflush(stdout);
+	if (show_progress) {
+		terminal_fprintf(stdout, TERMINAL_RESTORE_CURSOR);
+		fflush(stdout);
+	}
 	return ret;
 }
 
@@ -615,7 +621,7 @@ int main(int argc, char *argv[])
 	}
 
 	foo = time_start("process_commits");
-	for_each_range_do(&create_kernel_range);
+	for_each_range_do_parallel(&create_kernel_range);
 
 	terminal_fprintf(stdout, "\n");
 
