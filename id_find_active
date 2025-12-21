@@ -117,7 +117,11 @@ for sc in ${stable_commits}; do
 		continue
 	fi
 
+	# ***POLICY***
 	# See if this commit itself is a revert of something else (if so, let's not add it)
+	# Note, this can trip you up if you wonder why a commit/branch does not
+	# show up as vulnerable/fixed, this takes this out of the list, so
+	# watch out.
 	revert=$(sqlite3 ${DB} "SELECT reverts FROM commits WHERE id='${sc}';")
 	if [[ "${revert}" != "" ]]; then
 		# See if what we are reverting is a stable, or a mainline
