@@ -109,12 +109,21 @@ output=()
 # Find all stable branches first
 stable_commits=$(sqlite3 ${DB} "SELECT id FROM commits WHERE mainline_id='${id}';")
 for sc in ${stable_commits}; do
-	# Check for a revert before adding it to our list
-	dbg "stable_commit='${sc}'"
+	# Get the release for this commit
+	version=$(sqlite3 ${DB} "SELECT release FROM commits WHERE id='${sc}';")
+	dbg "stable_commit='${sc}' is in version ${version}"
+
+	# **POLICY**
+	# If the revert is in the same version, we do not add it to the list as
+	# that was never a "vulnerable" kernel release.
 	revert=$(sqlite3 ${DB} "SELECT id from commits WHERE reverts='${sc}';")
 	if [[ "${revert}" != "" ]]; then
-		dbg "	commit ${sc} is reverted by ${revert} so skipping"
-		continue
+		revert_version=$(sqlite3 ${DB} "SELECT release FROM commits WHERE id='${revert}';")
+		if [[ "${revert_version}" == "${version}" ]]; then
+			dbg "	commit ${sc}:${version} is reverted by ${revert}:${revert_version} same version so skipping"
+			continue
+		fi
+		dbg "	commit ${sc}:${version} is reverted by ${revert}:${revert_version} but different versions, so keeping"
 	fi
 
 	# ***POLICY***
@@ -134,9 +143,7 @@ for sc in ${stable_commits}; do
 		fi
 	fi
 
-	# Get the release for this commit
-	version=$(sqlite3 ${DB} "SELECT release FROM commits WHERE id='${sc}';")
-	dbg "	commit ${sc} is in version ${version}"
+	# Save off this version:stable_commit to our list
 	output+=("${version}:${sc}")
 done
 
