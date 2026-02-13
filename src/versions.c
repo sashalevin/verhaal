@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-only
 //
-// Copyright (c) 2025 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+// Copyright (c) 2025-2026 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 //
 // Note, this is a duplicate of the existing logic in main.c to cycle
 // through all of the versions to create the ranges.  For now, just use this
