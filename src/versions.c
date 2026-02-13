@@ -418,31 +418,43 @@ static char *get_head_tag(void)
 
 	// Get the branch description of 'master'
 	ret = git_branch_lookup(&ref, git_repo_get(), "master", GIT_BRANCH_LOCAL);
-	if (ret)
-		fprintf(stderr, "git_branch_lookup() failed: %d\n", ret);
+	if (ret) {
+		fprintf(stderr, "Fatal: Could not find 'master' branch (error %d). Please ensure your local repository has a 'master' branch.\n", ret);
+		exit(1);
+	}
 
 	oid = git_reference_target(ref);
-	if (!oid)
-		fprintf(stderr, "git_reference_target() failed\n");
+	if (!oid) {
+		fprintf(stderr, "Fatal: Could not determine the target OID for the 'master' branch reference.\n");
+		git_reference_free(ref);
+		exit(1);
+	}
 
 	ret = git_object_lookup(&object, git_repo_get(), oid, GIT_OBJECT_COMMIT);
-	if (ret)
-		fprintf(stderr, "git_object_lookup() failed: %d\n", ret);
+	if (ret) {
+		fprintf(stderr, "Fatal: Could not lookup the commit object for the 'master' branch (error %d).\n", ret);
+		git_reference_free(ref);
+		exit(1);
+	}
 
 
 	git_describe_options_init(&desc_options, GIT_DESCRIBE_OPTIONS_VERSION);
 	desc_options.only_follow_first_parent = 1;
 
 	ret = git_describe_commit(&res, object, &desc_options);
-	if (ret)
-		fprintf(stderr, "git_describe_commit() failed: %d\n", ret);
+	if (ret) {
+		fprintf(stderr, "Fatal: 'git describe' failed for the master branch head (error %d).\n", ret);
+		exit(1);
+	}
 
 	git_describe_format_options_init(&options, GIT_DESCRIBE_FORMAT_OPTIONS_VERSION);
 	options.abbreviated_size = 0;
 
 	ret = git_describe_format(&buf, res, &options);
-	if (ret)
-		fprintf(stderr, "git_describe_format() failed: %d\n", ret);
+	if (ret) {
+		fprintf(stderr, "Fatal: Could not format the 'git describe' result (error %d).\n", ret);
+		exit(1);
+	}
 
 	// Only print this out once.
 	if (!git_head_tag_print) {
