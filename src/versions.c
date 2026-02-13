@@ -271,7 +271,8 @@ void for_each_range_do(int (*do_it_function)(struct version_range *vr))
 		vr = &version_range_array[x];
 		ret = do_it_function(vr);
 		if (ret) {
-			printf("do_it failed for %s, %s, %d\n", vr->from.name, vr->to.name, vr->mainline);
+			fprintf(stderr, "Error: %s range %s to %s failed.",
+				vr->mainline ? "mainline" : "rc", vr->from.name, vr->to.name);
 			return;
 		}
 
@@ -334,10 +335,10 @@ void for_each_range_do_parallel(int (*do_it_function)(struct version_range *vr))
 
 	if (ctx.error) {
 		if (ctx.failed_vr)
-			printf("do_it failed for %s, %s, %d\n",
-			       ctx.failed_vr->from.name,
-			       ctx.failed_vr->to.name,
-			       ctx.failed_vr->mainline);
+			fprintf(stderr, "Error: %s range %s to %s failed.",
+				ctx.failed_vr->mainline ? "mainline" : "rc",
+				ctx.failed_vr->from.name,
+				ctx.failed_vr->to.name);
 		else
 			fprintf(stderr, "Parallel range worker failed with error %d\n", ctx.error);
 	}
