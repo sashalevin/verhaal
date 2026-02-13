@@ -711,6 +711,7 @@ void versions_create(void)
 	range_loop_through_x(4);
 	range_loop_through_x(5);
 	range_loop_through_x(6);
+	range_loop_through_x(7);
 
 	// Do "special" releases where we jump a major number
 	add_version_range_major("2.6.12-rc2", "2.6.12");
@@ -718,6 +719,7 @@ void versions_create(void)
 	add_version_range_major("3.19", "4.0");
 	add_version_range_major("4.20", "5.0");
 	add_version_range_major("5.19", "6.0");
+	add_version_range_major("6.19", "7.0");
 
 	// Fill in the last little bit of -rc release information if we have it in the tree
 	add_version_range_rc();
