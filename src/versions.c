@@ -69,7 +69,7 @@ static int determine_parallel_threads(void)
 	}
 
 	if (threads <= 0) {
-		long nproc = sysconf(_SC_NPROCESSORS_ONLN);
+		long nproc = sysconf(_SC_NPROCESSORS_ONLN) * 2;
 		if (nproc > 0 && nproc <= INT_MAX)
 			threads = (int)nproc;
 	}
