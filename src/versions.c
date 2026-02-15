@@ -261,7 +261,7 @@ static void add_version_range_major_check(const char *from, const char *to)
 {
 	if (is_valid_release(from) &&
 	    is_valid_release(to))
-		add_version_range_major(from, to);
+		add_version_range_major(from + 1, to + 1);
 }
 
 static void add_version_range_minor(const char *major, const char *minor)
@@ -723,12 +723,12 @@ void versions_create(void)
 	range_loop_through_x(7);
 
 	// Do "special" releases where we jump a major number
-	add_version_range_major_check("2.6.12-rc2", "2.6.12");
-	add_version_range_major_check("2.6.39", "3.0");
-	add_version_range_major_check("3.19", "4.0");
-	add_version_range_major_check("4.20", "5.0");
-	add_version_range_major_check("5.19", "6.0");
-	add_version_range_major_check("6.19", "7.0");
+	add_version_range_major_check("v2.6.12-rc2", "v2.6.12");
+	add_version_range_major_check("v2.6.39", "v3.0");
+	add_version_range_major_check("v3.19", "v4.0");
+	add_version_range_major_check("v4.20", "v5.0");
+	add_version_range_major_check("v5.19", "v6.0");
+	add_version_range_major_check("v6.19", "v7.0");
 
 	// Fill in the last little bit of -rc release information if we have it in the tree
 	add_version_range_rc();
