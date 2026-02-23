@@ -2,14 +2,8 @@
 //
 // Copyright (c) 2025-2026 Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 //
-// Note, this is a duplicate of the existing logic in main.c to cycle
-// through all of the versions to create the ranges.  For now, just use this
-// list to populate the database and hopefully, eventually, track what versions
-// are, and are not, in the database so we can create the "remaining ranges" to
-// build so we don't have to scan the whole world each time this program runs.
-//
-// Also, we do NOT handle the -rc calculations here, that's still in main.c.
-// Should be moved here eventually as well.
+// Handle all of the "version" logic that the kernel uses.  Major numbers, minor
+// numbers, -rc releases, the like.
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -656,7 +650,24 @@ static int add_version_range_rc(void)
 	int major = atoi(&head_tag[1]);
 	int minor = atoi(&dot[1]);
 
-	snprintf(range1, sizeof(range1), "%d.%d", major, minor - 1);
+	if (minor != 0) {
+		// Normal path (i.e. not every 3 years), so just go back one minor number and all is
+		// good
+		snprintf(range1, sizeof(range1), "%d.%d", major, minor - 1);
+	} else {
+		// Sometimes the minor is 0 (i.e. 7.0-rc1), if so, we need to go "back" to the previous
+		// release for the range.
+		switch (major) {
+		case 7:
+			snprintf(range1, sizeof(range1), "%s", "6.19");
+			break;
+		default:
+			fprintf(stderr, "Error: do not know how to jump major versions for %s, please fix codebase.\n",
+				head_tag);
+			goto exit;
+		}
+	}
+
 	snprintf(range2, sizeof(range2), "%d.%d-rc1", major, minor);
 	add_version_range_major(range1, range2);
 
