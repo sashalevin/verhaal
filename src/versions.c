@@ -713,6 +713,7 @@ void versions_create(void)
 	loop_through_x(4);
 	loop_through_x(5);
 	loop_through_x(6);
+	loop_through_x(7);
 	loop_through_rc();
 	seconds = time_stop(foo);
 	terminal_fprintf(stdout, "    "
