@@ -14,6 +14,8 @@ jobs:
   build-db:
     runs-on: ubuntu-latest
     timeout-minutes: 300
+    permissions:
+      contents: write   # needed to publish the rolling release
 
     steps:
       - name: Checkout verhaal
@@ -29,7 +31,8 @@ jobs:
             pkg-config \
             libgit2-dev \
             libsqlite3-dev \
-            libpcre2-dev
+            libpcre2-dev \
+            sqlite3
 
       - name: Build verhaal
         run: ./autogen.sh
@@ -52,3 +55,42 @@ jobs:
           path: verhaal.db
           if-no-files-found: error
           retention-days: 7
+
+      - name: Publish to rolling 'db-latest' release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          built_at=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
+          commits=$(sqlite3 verhaal.db 'SELECT COUNT(*) FROM commits;')
+          releases=$(sqlite3 verhaal.db 'SELECT COUNT(DISTINCT release) FROM commits;')
+          size=$(du -h verhaal.db | cut -f1)
+
+          notes=$(cat <<EOF
+          Daily-rebuilt verhaal database.
+
+          - Built: \`$built_at\` (run [\`${GITHUB_RUN_ID}\`](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}))
+          - Commits: $commits
+          - Releases tracked: $releases
+          - Size: $size
+          - Source: \`linux-stable.git\` from kernel.org
+
+          This release is overwritten on each daily build.
+
+          **Stable download URL:** https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/verhaal.db
+          EOF
+          )
+
+          if gh release view db-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload db-latest verhaal.db \
+              --repo "$GITHUB_REPOSITORY" --clobber
+            gh release edit db-latest \
+              --repo "$GITHUB_REPOSITORY" --notes "$notes" --latest
+          else
+            gh release create db-latest verhaal.db \
+              --repo "$GITHUB_REPOSITORY" \
+              --title "Latest verhaal.db" \
+              --notes "$notes" \
+              --latest
+          fi
