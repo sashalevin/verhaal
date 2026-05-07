@@ -48,11 +48,23 @@ jobs:
           CVEKERNELTREE: ${{ runner.temp }}/linux-stable.git
         run: ./build/verhaal
 
+      - name: Compress database with xz
+        run: |
+          set -euo pipefail
+          # Capture metadata before xz consumes verhaal.db.
+          {
+            echo "DB_COMMITS=$(sqlite3 verhaal.db 'SELECT COUNT(*) FROM commits;')"
+            echo "DB_RELEASES=$(sqlite3 verhaal.db 'SELECT COUNT(DISTINCT release) FROM commits;')"
+            echo "DB_RAW_SIZE=$(du -h verhaal.db | cut -f1)"
+          } >> "$GITHUB_ENV"
+          xz -ee -T0 -vv verhaal.db
+          echo "DB_XZ_SIZE=$(du -h verhaal.db.xz | cut -f1)" >> "$GITHUB_ENV"
+
       - name: Upload database artifact
         uses: actions/upload-artifact@v4
         with:
           name: verhaal-db
-          path: verhaal.db
+          path: verhaal.db.xz
           if-no-files-found: error
           retention-days: 7
 
@@ -63,22 +75,21 @@ jobs:
           set -euo pipefail
 
           built_at=$(date -u +'%Y-%m-%d %H:%M:%S UTC')
-          commits=$(sqlite3 verhaal.db 'SELECT COUNT(*) FROM commits;')
-          releases=$(sqlite3 verhaal.db 'SELECT COUNT(DISTINCT release) FROM commits;')
-          size=$(du -h verhaal.db | cut -f1)
 
           notes=$(cat <<EOF
-          Daily-rebuilt verhaal database.
+          Daily-rebuilt verhaal database (xz-compressed).
 
           - Built: \`$built_at\` (run [\`${GITHUB_RUN_ID}\`](https://github.com/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}))
-          - Commits: $commits
-          - Releases tracked: $releases
-          - Size: $size
+          - Commits: ${DB_COMMITS}
+          - Releases tracked: ${DB_RELEASES}
+          - Size: ${DB_XZ_SIZE} compressed / ${DB_RAW_SIZE} uncompressed
           - Source: \`linux-stable.git\` from kernel.org
+
+          Decompress with \`xz -d verhaal.db.xz\`.
 
           This release is overwritten on each daily build.
 
-          **Stable download URL:** https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/verhaal.db
+          **Stable download URL:** https://github.com/${GITHUB_REPOSITORY}/releases/latest/download/verhaal.db.xz
           EOF
           )
 
@@ -88,7 +99,7 @@ jobs:
           gh release delete db-latest \
             --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag 2>/dev/null || true
 
-          gh release create db-latest verhaal.db \
+          gh release create db-latest verhaal.db.xz \
             --repo "$GITHUB_REPOSITORY" \
             --title "Latest verhaal.db" \
             --notes "$notes" \
