@@ -82,15 +82,14 @@ jobs:
           EOF
           )
 
-          if gh release view db-latest --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            gh release upload db-latest verhaal.db \
-              --repo "$GITHUB_REPOSITORY" --clobber
-            gh release edit db-latest \
-              --repo "$GITHUB_REPOSITORY" --notes "$notes" --latest
-          else
-            gh release create db-latest verhaal.db \
-              --repo "$GITHUB_REPOSITORY" \
-              --title "Latest verhaal.db" \
-              --notes "$notes" \
-              --latest
-          fi
+          # Drop the previous release (and its tag) so publishedAt reflects
+          # this build, not the first-ever publish. Tolerate a missing release
+          # so the very first run still works.
+          gh release delete db-latest \
+            --repo "$GITHUB_REPOSITORY" --yes --cleanup-tag 2>/dev/null || true
+
+          gh release create db-latest verhaal.db \
+            --repo "$GITHUB_REPOSITORY" \
+            --title "Latest verhaal.db" \
+            --notes "$notes" \
+            --latest
