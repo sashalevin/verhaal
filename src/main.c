@@ -122,9 +122,20 @@ static char *find_upstream(const char *message)
 	char *upstream;
 	char *sha1;
 
-	upstream = search_string(message, ".*upstream.*\n?");
-	if (!upstream)
-		return NULL;
+	/*
+	 * Find a line that has a 40 digit sha before or after the text
+	 * "upstream"
+	 *
+	 * Yes, this could probably be done in a single regex, but this way
+	 * it's a bit more readable by checking if the sha is before or
+	 * after, the text.
+	 */
+	upstream = search_string(message, ".*[a-f0-9]{40,}.*upstream.*\n?");
+	if (!upstream) {
+		upstream = search_string(message, ".*upstream.*[a-f0-9]{40,}.*\n?");
+		if (!upstream)
+			return NULL;
+	}
 
 	sha1 = find_sha1_full(upstream);
 	free(upstream);
@@ -402,7 +413,9 @@ static int create_kernel_range(struct version_range *vr)
 		if (!vr->mainline) {
 			upstream = find_upstream(message);
 			if (upstream)
-				dbg("	upstream=%s\n", upstream);
+				dbg("	sha %s is upstream=%s\n", sha, upstream);
+			else
+				dbg("	sha %s has no upstream?\n", sha);
 		}
 
 		// Find if this is a revert
