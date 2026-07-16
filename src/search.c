@@ -51,7 +51,7 @@ char *search_string(const char *string, const char *pattern)
 			PCRE2_SPTR substring_start = (PCRE2_SPTR8)string + ovector[2*i];
 			size_t substring_length = ovector[2*i+1] - ovector[2*i];
 
-			//printf("	%2d: %.*s\n", i, (int)substring_length2, (char *)substring_start2);
+			//printf("	%2d: %.*s\n", i, (int)substring_length, (char *)substring_start);
 			match = malloc(substring_length + 1);
 			memcpy(match, substring_start, substring_length);
 			match[substring_length] = 0x00;
